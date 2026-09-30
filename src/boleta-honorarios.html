@@ -1,0 +1,488 @@
+<title>Calculadora Boleta de Honorarios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+
+<style>
+:root{
+  --bg:#F6F8F7;
+  --surface:#FFFFFF;
+  --surface-2:#F0F4F2;
+  --ink:#12201D;
+  --ink-2:#4C5C58;
+  --ink-3:#7C8C87;
+  --line:#E1E8E5;
+  --line-strong:#CBD6D2;
+  --accent:#00897A;
+  --accent-ink:#00655B;
+  --accent-soft:#E4F2EF;
+  --focus:#00897A;
+
+  --c-liquido:#00897A;
+  --c-retencion:#C2610C;
+
+  --shadow:0 1px 2px rgba(18,32,29,.05), 0 8px 24px -12px rgba(18,32,29,.18);
+  --r:14px;
+  --r-sm:9px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0C1412; --surface:#141E1B; --surface-2:#1A2622;
+    --ink:#E7EFEC; --ink-2:#9FB0AB; --ink-3:#718380;
+    --line:#23322E; --line-strong:#33453F;
+    --accent:#2FB39B; --accent-ink:#57C9B3; --accent-soft:#12302A; --focus:#2FB39B;
+    --c-liquido:#1E9B85; --c-retencion:#C4762A;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0C1412; --surface:#141E1B; --surface-2:#1A2622;
+  --ink:#E7EFEC; --ink-2:#9FB0AB; --ink-3:#718380;
+  --line:#23322E; --line-strong:#33453F;
+  --accent:#2FB39B; --accent-ink:#57C9B3; --accent-soft:#12302A; --focus:#2FB39B;
+  --c-liquido:#1E9B85; --c-retencion:#C4762A;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Public Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:660px;margin:0 auto;padding-inline:16px;padding-block:28px 56px}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+/* ---------- encabezado ---------- */
+.volver{
+  display:inline-flex;align-items:center;gap:6px;margin-bottom:12px;
+  font-size:12.5px;font-weight:600;color:var(--ink-3);text-decoration:none;
+}
+.volver:hover{color:var(--accent-ink)}
+.volver:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:4px}
+.volver em{font-style:normal;transition:transform .16s}
+.volver:hover em{transform:translateX(-3px)}
+
+.masthead{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between;margin-bottom:22px}
+.brand h1{
+  font-family:"Bricolage Grotesque","Public Sans",sans-serif;
+  font-weight:800;font-size:clamp(25px,5.2vw,36px);letter-spacing:-.027em;
+  line-height:1.05;margin:0;text-wrap:balance;
+}
+.brand p{margin:5px 0 0;color:var(--ink-2);font-size:14px;max-width:46ch}
+.stamp{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--accent-soft);color:var(--accent-ink);
+  border:1px solid color-mix(in srgb,var(--accent) 26%,transparent);
+  border-radius:100px;padding:6px 13px;
+  font-size:12px;font-weight:600;letter-spacing:.02em;white-space:nowrap;
+}
+.stamp .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}
+
+/* ---------- tarjetas ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:16px}
+.card-b{padding:18px}
+
+/* ---------- selector de modo ---------- */
+.modo{display:flex;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;margin-bottom:17px}
+.modo label{flex:1;display:block;position:relative;min-width:0}
+.modo input{position:absolute;opacity:0;width:1px;height:1px}
+.modo span{
+  display:block;text-align:center;padding:10px 8px;background:var(--surface);
+  font-size:13.5px;font-weight:600;color:var(--ink-2);cursor:pointer;
+  transition:background .13s,color .13s;
+}
+.modo span b{display:block;font-size:11px;font-weight:500;opacity:.78;margin-top:2px}
+.modo input:checked+span{background:var(--accent);color:#fff}
+.modo input:focus-visible+span{outline:2px solid var(--focus);outline-offset:-2px}
+
+/* ---------- entrada ---------- */
+label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:7px;color:var(--ink)}
+.money{position:relative}
+.money .peso{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:21px;pointer-events:none}
+.money input{
+  width:100%;font:inherit;font-size:21px;font-weight:600;color:var(--ink);
+  font-variant-numeric:tabular-nums;
+  background:var(--surface);border:1px solid var(--line-strong);
+  border-radius:var(--r-sm);padding:12px 14px 12px 32px;
+}
+.money input:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.hint{font-size:11.5px;color:var(--ink-3);margin:7px 0 0;line-height:1.45}
+
+/* ---------- resultado ---------- */
+.hero-lab{font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);margin:0}
+.hero-n{
+  font-family:"Bricolage Grotesque","Public Sans",sans-serif;
+  font-weight:800;font-size:clamp(33px,8vw,50px);letter-spacing:-.035em;
+  line-height:1.02;margin:5px 0 0;color:var(--accent-ink);font-variant-numeric:tabular-nums;
+}
+.hero-sub{margin:7px 0 0;font-size:13.5px;color:var(--ink-2)}
+.hero-sub b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+
+.bar{display:flex;gap:2px;height:36px;margin:19px 0 12px;border-radius:7px;overflow:hidden;background:var(--surface-2)}
+.seg-b{position:relative;min-width:2px;transition:flex-grow .3s cubic-bezier(.4,0,.2,1)}
+.seg-b:first-child{border-radius:7px 0 0 7px}
+.seg-b:last-child{border-radius:0 7px 7px 0}
+.keys{display:flex;flex-wrap:wrap;gap:7px 18px}
+.key{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2)}
+.key i{width:11px;height:11px;border-radius:3px;flex:none}
+.key b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ---------- desglose ---------- */
+.lines{display:flex;flex-direction:column}
+.line{display:grid;grid-template-columns:11px 1fr auto;gap:11px;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line)}
+.line:last-child{border-bottom:0}
+.line i{width:11px;height:11px;border-radius:3px;align-self:center}
+.line .nm{font-size:14px;min-width:0}
+.line .nm em{display:block;font-style:normal;font-size:11.5px;color:var(--ink-3);margin-top:2px;line-height:1.4}
+.line .vl{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.line.tot{border-top:1.5px solid var(--line-strong);border-bottom:0;padding-top:13px}
+.line.tot .nm{font-weight:700}
+.line.tot .vl{font-size:17px;font-weight:700}
+
+.aviso{
+  margin:15px 0 0;padding:11px 13px;border-radius:var(--r-sm);
+  background:var(--surface-2);border:1px solid var(--line);
+  font-size:12px;color:var(--ink-2);line-height:1.5;
+}
+
+/* ---------- años ---------- */
+.anios{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.anio{background:var(--surface);padding:11px 13px}
+.anio.hoy{background:var(--accent-soft)}
+.anio dt{margin:0;font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.anio.hoy dt{color:var(--accent-ink)}
+.anio dd{margin:3px 0 0;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.anio dd small{display:block;font-size:11px;font-weight:500;color:var(--ink-3);margin-top:1px}
+
+.seccion{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin:0 0 11px}
+
+.foot{margin-top:22px;font-size:11.5px;color:var(--ink-3);line-height:1.6}
+.foot a{color:var(--ink-2)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+
+  <a class="volver" href="https://calculadorass.github.io/"><em>←</em> Calculadoras</a>
+
+  <div class="masthead">
+    <div class="brand">
+      <h1>Boleta de Honorarios</h1>
+      <p>Convierte entre el monto líquido que se paga y el gasto total de la boleta.</p>
+    </div>
+    <div class="stamp"><span class="dot"></span><span id="tasa-stamp">Retención 15,25% · 2026</span></div>
+  </div>
+
+  <section class="card">
+    <div class="card-b">
+
+      <div class="modo">
+        <label>
+          <input type="radio" name="modo" id="m-liquido" value="liquido" checked>
+          <span>Sé el líquido<b>lo que se paga</b></span>
+        </label>
+        <label>
+          <input type="radio" name="modo" id="m-bruto" value="bruto">
+          <span>Sé el bruto<b>gasto total</b></span>
+        </label>
+      </div>
+
+      <label class="lab" for="monto" id="monto-lab">Monto líquido a pagar</label>
+      <div class="money">
+        <span class="peso">$</span>
+        <input class="num" id="monto" type="text" inputmode="numeric" value="500.000" autocomplete="off">
+      </div>
+      <p class="hint" id="monto-hint">El dinero que efectivamente recibe la persona.</p>
+
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-b">
+      <p class="hero-lab" id="res-lab">Gasto total por boleta</p>
+      <p class="hero-n num" id="res-n">$0</p>
+      <p class="hero-sub" id="res-sub"></p>
+
+      <div class="bar" id="bar" role="img" aria-label="Reparto del monto bruto entre líquido y retención"></div>
+      <div class="keys" id="keys"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-b">
+      <div class="lines" id="lines"></div>
+      <p class="aviso" id="aviso" hidden></p>
+    </div>
+  </section>
+
+  <p class="seccion">La misma boleta en los próximos años</p>
+  <dl class="anios" id="anios"></dl>
+
+  <p class="foot" id="foot"></p>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     Valores de respaldo. Si indicadores.json trae algo más nuevo,
+     estos se reemplazan al cargar la página.
+     ============================================================ */
+  var RESPALDO = {
+    periodo: "Septiembre 2026",
+    fuente: "Previred",
+    honorarios: {
+      retencion: 0.1525,
+      anio: 2026,
+      origen: "https://www.sii.cl/destacados/boletas_honorarios/",
+      calendario: [
+        {anio:2025, tasa:0.145},
+        {anio:2026, tasa:0.1525},
+        {anio:2027, tasa:0.16},
+        {anio:2028, tasa:0.17}
+      ]
+    }
+  };
+
+  var IND = RESPALDO;
+
+  var fCLP = new Intl.NumberFormat("es-CL",{style:"currency",currency:"CLP",maximumFractionDigits:0});
+  var fNum = new Intl.NumberFormat("es-CL",{maximumFractionDigits:0});
+  var fPct = new Intl.NumberFormat("es-CL",{minimumFractionDigits:2,maximumFractionDigits:2});
+  function clp(n){ return fCLP.format(Math.round(n||0)); }
+  function pctTasa(t){ return fPct.format(t*100) + "%"; }
+
+  var $ = function(id){ return document.getElementById(id); };
+  var elMonto = $("monto");
+
+  function leerMonto(){
+    var v = String(elMonto.value||"").replace(/[^\d]/g,"");
+    return v ? parseInt(v,10) : 0;
+  }
+  function esModoLiquido(){ return $("m-liquido").checked; }
+  function tasa(){ return IND.honorarios.retencion; }
+
+  /* ---------- cálculo ----------
+     El SII redondea la retención a pesos enteros, así que:
+       desde el bruto  → retención = redondeo(bruto × tasa)
+       desde el líquido → se busca el bruto entero cuyo líquido calce exacto
+  */
+  function desdeBruto(bruto){
+    var retencion = Math.round(bruto * tasa());
+    return { bruto:bruto, retencion:retencion, liquido:bruto - retencion, exacto:true };
+  }
+
+  function desdeLiquido(objetivo){
+    if(objetivo <= 0) return { bruto:0, retencion:0, liquido:0, exacto:true };
+    var base = Math.round(objetivo / (1 - tasa()));
+    var mejor = null, b, ret, liq, dif;
+    for(b = Math.max(1, base - 4); b <= base + 4; b++){
+      ret = Math.round(b * tasa());
+      liq = b - ret;
+      dif = Math.abs(liq - objetivo);
+      if(mejor === null || dif < mejor.dif || (dif === mejor.dif && b < mejor.bruto)){
+        mejor = { bruto:b, retencion:ret, liquido:liq, dif:dif };
+      }
+    }
+    mejor.exacto = (mejor.dif === 0);
+    mejor.objetivo = objetivo;
+    return mejor;
+  }
+
+  function calcular(){
+    var monto = leerMonto();
+    return esModoLiquido() ? desdeLiquido(monto) : desdeBruto(monto);
+  }
+
+  /* ---------- pintado ---------- */
+  function pintarBarra(r){
+    var total = r.bruto || 1;
+    var partes = [
+      {n:"Líquido",   v:r.liquido,   c:"var(--c-liquido)"},
+      {n:"Retención", v:r.retencion, c:"var(--c-retencion)"}
+    ];
+    var bar = $("bar"), keys = $("keys");
+    bar.textContent = ""; keys.textContent = "";
+    partes.forEach(function(p){
+      var porc = p.v / total * 100;
+      if(p.v > 0){
+        var d = document.createElement("div");
+        d.className = "seg-b";
+        d.style.flex = "1 1 " + porc + "%";
+        d.style.background = p.c;
+        d.title = p.n + ": " + clp(p.v);
+        bar.appendChild(d);
+      }
+      var k = document.createElement("div");
+      k.className = "key";
+      var i = document.createElement("i"); i.style.background = p.c;
+      var t = document.createElement("span"); t.textContent = p.n + " ";
+      var b = document.createElement("b");
+      b.textContent = new Intl.NumberFormat("es-CL",{maximumFractionDigits:1}).format(porc) + "%";
+      k.appendChild(i); k.appendChild(t); k.appendChild(b);
+      keys.appendChild(k);
+    });
+  }
+
+  function fila(cls, color, nombre, detalle, valor){
+    var d = document.createElement("div");
+    d.className = "line" + (cls ? " "+cls : "");
+    var i = document.createElement("i");
+    i.style.background = color || "transparent";
+    var nm = document.createElement("div"); nm.className = "nm";
+    nm.appendChild(document.createTextNode(nombre));
+    if(detalle){ var em = document.createElement("em"); em.textContent = detalle; nm.appendChild(em); }
+    var vl = document.createElement("div"); vl.className = "vl num"; vl.textContent = valor;
+    d.appendChild(i); d.appendChild(nm); d.appendChild(vl);
+    return d;
+  }
+
+  function pintarDesglose(r){
+    var L = $("lines");
+    L.textContent = "";
+    L.appendChild(fila("", null, "Monto bruto de la boleta",
+      "Es el gasto total de quien contrata", clp(r.bruto)));
+    L.appendChild(fila("", "var(--c-retencion)", "Retención",
+      pctTasa(tasa()) + " del bruto, la paga el emisor al SII", "− " + clp(r.retencion)));
+    L.appendChild(fila("tot", "var(--c-liquido)", "Monto líquido",
+      "Lo que efectivamente se le paga a la persona", clp(r.liquido)));
+  }
+
+  function pintarAnios(r){
+    var cont = $("anios");
+    cont.textContent = "";
+    var cal = IND.honorarios.calendario || [];
+    var actual = IND.honorarios.anio;
+    cal.forEach(function(a){
+      var div = document.createElement("div");
+      div.className = "anio" + (a.anio === actual ? " hoy" : "");
+      var dt = document.createElement("dt");
+      dt.textContent = a.anio + (a.anio === actual ? " · hoy" : "");
+      var dd = document.createElement("dd");
+      // Se mantiene fijo el bruto y se muestra el líquido que resultaría con la tasa de ese año.
+      var ret = Math.round(r.bruto * a.tasa);
+      dd.textContent = clp(r.bruto - ret);
+      var sm = document.createElement("small");
+      sm.textContent = pctTasa(a.tasa);
+      dd.appendChild(sm);
+      div.appendChild(dt); div.appendChild(dd);
+      cont.appendChild(div);
+    });
+  }
+
+  function render(){
+    var r = calcular();
+    var liq = esModoLiquido();
+
+    $("monto-lab").textContent  = liq ? "Monto líquido a pagar" : "Monto bruto de la boleta";
+    $("monto-hint").textContent = liq
+      ? "El dinero que efectivamente recibe la persona."
+      : "El gasto total: lo que sale del bolsillo de quien contrata.";
+
+    $("res-lab").textContent = liq ? "Gasto total por boleta" : "Monto líquido a pagar";
+    $("res-n").textContent   = clp(liq ? r.bruto : r.liquido);
+    $("res-sub").innerHTML   = "";
+    var sub = document.createElement("span");
+    sub.appendChild(document.createTextNode(liq
+      ? "Para que reciba " + clp(r.liquido) + ", la boleta se emite por "
+      : "De un bruto de " + clp(r.bruto) + ", se retienen "));
+    var b = document.createElement("b");
+    b.textContent = liq ? clp(r.bruto) : clp(r.retencion);
+    sub.appendChild(b);
+    sub.appendChild(document.createTextNode("."));
+    $("res-sub").appendChild(sub);
+
+    pintarBarra(r);
+    pintarDesglose(r);
+    pintarAnios(r);
+
+    var aviso = $("aviso");
+    if(liq && r.exacto === false){
+      aviso.hidden = false;
+      aviso.textContent = "Con pesos enteros no existe un bruto que dé exactamente " +
+        clp(r.objetivo) + ". El más cercano deja " + clp(r.liquido) + ", una diferencia de " +
+        clp(Math.abs(r.liquido - r.objetivo)) + ".";
+    } else {
+      aviso.hidden = true;
+      aviso.textContent = "";
+    }
+
+    $("tasa-stamp").textContent = "Retención " + pctTasa(tasa()) + " · " + IND.honorarios.anio;
+
+    $("foot").textContent = "La retención la declara y paga quien emite la boleta (o quien la retiene, " +
+      "si es una empresa). Va a cuenta del impuesto anual y de las cotizaciones previsionales del " +
+      "trabajador independiente, que se ajustan en la Operación Renta. Tasa vigente desde el " +
+      "1 de enero de " + IND.honorarios.anio + " según la Ley 21.133.";
+  }
+
+  /* ---------- eventos ---------- */
+  elMonto.addEventListener("input", function(){
+    var pos = elMonto.value.length - elMonto.selectionStart;
+    var n = leerMonto();
+    elMonto.value = n ? fNum.format(n) : "";
+    try{
+      var np = Math.max(0, elMonto.value.length - pos);
+      elMonto.setSelectionRange(np, np);
+    }catch(e){}
+    render();
+  });
+  elMonto.addEventListener("blur", function(){ if(!elMonto.value) elMonto.value = "0"; render(); });
+
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="modo"]'), function(el){
+    el.addEventListener("change", function(){
+      // Al cambiar de modo se conserva el resultado: el valor calculado pasa a ser la entrada.
+      var previo = calcular();
+      elMonto.value = fNum.format(esModoLiquido() ? previo.liquido : previo.bruto);
+      render();
+    });
+  });
+
+  render();
+
+  /* ---------- tasa al día ---------- */
+  function normalizar(d){
+    if(!d || typeof d !== "object" || !d.honorarios) return null;
+    var h = d.honorarios;
+    var t = +h.retencion;
+    if(!(t > 0 && t < 1)) return null;
+    var cal = Array.isArray(h.calendario)
+      ? h.calendario.filter(function(a){ return a && isFinite(+a.anio) && +a.tasa > 0 && +a.tasa < 1; })
+                    .map(function(a){ return {anio:+a.anio, tasa:+a.tasa}; })
+      : [];
+    return {
+      periodo: typeof d.periodo === "string" ? d.periodo : RESPALDO.periodo,
+      fuente:  typeof d.fuente  === "string" ? d.fuente  : RESPALDO.fuente,
+      honorarios: {
+        retencion: t,
+        anio: isFinite(+h.anio) ? +h.anio : RESPALDO.honorarios.anio,
+        origen: typeof h.origen === "string" ? h.origen : RESPALDO.honorarios.origen,
+        calendario: cal.length ? cal : RESPALDO.honorarios.calendario
+      }
+    };
+  }
+
+  (function(){
+    var rutas = ["../indicadores.json", "./indicadores.json"];
+    function intentar(i){
+      if(i >= rutas.length) return;   // se queda con los valores de respaldo
+      try{
+        fetch(rutas[i], {cache:"no-cache"})
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(function(d){
+            var limpio = normalizar(d);
+            if(limpio){ IND = limpio; render(); } else { intentar(i+1); }
+          })
+          ["catch"](function(){ intentar(i+1); });
+      }catch(e){ intentar(i+1); }
+    }
+    intentar(0);
+  })();
+
+})();
+</script>

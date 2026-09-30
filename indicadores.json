@@ -110,5 +110,28 @@
       "factor": 0.4,
       "rebaja": 38.82
     }
-  ]
+  ],
+  "honorarios": {
+    "retencion": 0.1525,
+    "anio": 2026,
+    "origen": "https://www.sii.cl/destacados/boletas_honorarios/",
+    "calendario": [
+      {
+        "anio": 2025,
+        "tasa": 0.145
+      },
+      {
+        "anio": 2026,
+        "tasa": 0.1525
+      },
+      {
+        "anio": 2027,
+        "tasa": 0.16
+      },
+      {
+        "anio": 2028,
+        "tasa": 0.17
+      }
+    ]
+  }
 }

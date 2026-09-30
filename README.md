@@ -10,7 +10,7 @@ dependencias ni backend, servidas por GitHub Pages.
 | | Estado | Dirección |
 |---|---|---|
 | **Sueldo líquido** | Disponible | [`/sueldo-liquido/`](https://calculadorass.github.io/sueldo-liquido/) |
-| Boleta de honorarios | En preparación | — |
+| **Boleta de honorarios** | Disponible | [`/boleta-honorarios/`](https://calculadorass.github.io/boleta-honorarios/) |
 | Bonos y aguinaldos | En preparación | — |
 
 ## Indicadores compartidos
@@ -31,14 +31,21 @@ que siempre muestra un resultado aunque el archivo no cargue.
 
 Los tramos del Impuesto Único están fijados por ley y no cambian mes a mes.
 
+La tasa de retención de honorarios vive en el mismo archivo, bajo `honorarios`,
+junto con el calendario de la Ley 21.133. Cambia **una vez al año**, cada 1 de
+enero (15,25% en 2026, 16% en 2027, 17% en 2028), pero como la tarea corre todos
+los meses, el cambio de enero queda cubierto.
+
 ## Estructura
 
 ```
 src/portada.html          fuente de la portada
-src/sueldo-liquido.html   fuente de la calculadora
+src/sueldo-liquido.html   fuente de la calculadora de sueldo
+src/boleta-honorarios.html fuente de la calculadora de honorarios
 build.sh                  genera las páginas agregando el envoltorio HTML
 index.html                portada            (generado — no editar a mano)
-sueldo-liquido/index.html calculadora        (generado — no editar a mano)
+sueldo-liquido/index.html sueldo líquido     (generado — no editar a mano)
+boleta-honorarios/index.html honorarios      (generado — no editar a mano)
 indicadores.json          valores del mes, compartidos
 ```
 
