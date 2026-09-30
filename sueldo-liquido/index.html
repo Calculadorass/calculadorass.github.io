@@ -1,0 +1,825 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Calcula tu sueldo líquido en Chile desde el bruto: AFP, salud, seguro de cesantía e Impuesto Único, con los indicadores oficiales de Previred.">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font:14px/1.5 system-ui,sans-serif;background:#fafaf9}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>Calculadora Sueldo Líquido</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+
+<style>
+:root{
+  --bg:#F6F8F7;
+  --surface:#FFFFFF;
+  --surface-2:#F0F4F2;
+  --ink:#12201D;
+  --ink-2:#4C5C58;
+  --ink-3:#7C8C87;
+  --line:#E1E8E5;
+  --line-strong:#CBD6D2;
+  --accent:#00897A;
+  --accent-ink:#00655B;
+  --accent-soft:#E4F2EF;
+  --focus:#00897A;
+
+  --c-liquido:#00897A;
+  --c-afp:#C2610C;
+  --c-salud:#2563C9;
+  --c-afc:#8F7500;
+  --c-imp:#A82D86;
+
+  --shadow:0 1px 2px rgba(18,32,29,.05), 0 8px 24px -12px rgba(18,32,29,.18);
+  --r:14px;
+  --r-sm:9px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0C1412;
+    --surface:#141E1B;
+    --surface-2:#1A2622;
+    --ink:#E7EFEC;
+    --ink-2:#9FB0AB;
+    --ink-3:#718380;
+    --line:#23322E;
+    --line-strong:#33453F;
+    --accent:#2FB39B;
+    --accent-ink:#57C9B3;
+    --accent-soft:#12302A;
+    --focus:#2FB39B;
+
+    --c-liquido:#1E9B85;
+    --c-afp:#C4762A;
+    --c-salud:#4A80D6;
+    --c-afc:#9A8226;
+    --c-imp:#C05CA0;
+
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0C1412;
+  --surface:#141E1B;
+  --surface-2:#1A2622;
+  --ink:#E7EFEC;
+  --ink-2:#9FB0AB;
+  --ink-3:#718380;
+  --line:#23322E;
+  --line-strong:#33453F;
+  --accent:#2FB39B;
+  --accent-ink:#57C9B3;
+  --accent-soft:#12302A;
+  --focus:#2FB39B;
+
+  --c-liquido:#1E9B85;
+  --c-afp:#C4762A;
+  --c-salud:#4A80D6;
+  --c-afc:#9A8226;
+  --c-imp:#C05CA0;
+
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:"Public Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{
+  max-width:1120px;
+  margin:0 auto;
+  padding-inline:16px;
+  padding-block:28px 56px;
+}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+/* ---------- encabezado ---------- */
+.volver{
+  display:inline-flex;align-items:center;gap:6px;margin-bottom:12px;
+  font-size:12.5px;font-weight:600;color:var(--ink-3);text-decoration:none;
+}
+.volver:hover{color:var(--accent-ink)}
+.volver:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:4px}
+.volver em{font-style:normal;transition:transform .16s}
+.volver:hover em{transform:translateX(-3px)}
+.masthead{display:flex;flex-wrap:wrap;gap:14px 20px;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
+.brand h1{
+  font-family:"Bricolage Grotesque","Public Sans",sans-serif;
+  font-weight:800;
+  font-size:clamp(26px,5vw,38px);
+  letter-spacing:-.025em;
+  line-height:1.05;
+  margin:0;
+  text-wrap:balance;
+}
+.brand p{margin:5px 0 0;color:var(--ink-2);font-size:14px;max-width:46ch}
+.stamp{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--accent-soft);color:var(--accent-ink);
+  border:1px solid color-mix(in srgb,var(--accent) 26%,transparent);
+  border-radius:100px;padding:6px 13px;
+  font-size:12px;font-weight:600;letter-spacing:.02em;white-space:nowrap;
+}
+.stamp .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}
+
+/* ---------- cinta de indicadores ---------- */
+.ribbon{
+  display:grid;grid-template-columns:repeat(5,1fr);
+  gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:var(--r);
+  overflow:hidden;margin-bottom:22px;
+}
+/* Sin celdas huérfanas en ningún ancho: 5 → 3+2 → 2+2+1 */
+@media (max-width:860px){
+  .ribbon{grid-template-columns:repeat(3,1fr)}
+  .ribbon .ind:nth-child(4){grid-column:span 2}
+}
+@media (max-width:520px){
+  .ribbon{grid-template-columns:repeat(2,1fr)}
+  .ribbon .ind:nth-child(4){grid-column:auto}
+  .ribbon .ind:nth-child(5){grid-column:1/-1}
+}
+.ind{background:var(--surface);padding:11px 14px}
+.ind dt{margin:0;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.ind dd{margin:3px 0 0;font-size:16px;font-weight:600;letter-spacing:-.01em}
+.ind dd small{font-size:11px;font-weight:500;color:var(--ink-3);letter-spacing:0}
+
+/* ---------- rejilla ---------- */
+.grid{display:grid;gap:18px;grid-template-columns:1fr}
+/* En una columna el resultado va primero: se ve qué hace la página al abrirla. */
+@media (max-width:899px){ #panel-hero{order:-1} }
+@media (min-width:900px){
+  .grid{grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);align-items:start}
+  #panel-form{grid-column:1;grid-row:1/span 2}
+  #panel-hero{grid-column:2;grid-row:1}
+  #panel-detalle{grid-column:2;grid-row:2}
+}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.card-h{padding:15px 18px 0}
+.card-h h2{
+  margin:0;font-family:"Bricolage Grotesque","Public Sans",sans-serif;
+  font-size:13px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);
+}
+.card-b{padding:16px 18px 20px}
+
+/* ---------- formulario ---------- */
+.field{margin-bottom:15px}
+.field:last-child{margin-bottom:0}
+label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--ink)}
+.hint{font-size:11.5px;color:var(--ink-3);margin-top:5px;line-height:1.4}
+.input,.select{
+  width:100%;font:inherit;font-size:15px;color:var(--ink);
+  background:var(--surface);border:1px solid var(--line-strong);
+  border-radius:var(--r-sm);padding:9px 11px;
+}
+.input{font-variant-numeric:tabular-nums}
+.select{appearance:none;padding-right:34px;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink-3) 50%),linear-gradient(135deg,var(--ink-3) 50%,transparent 50%);
+  background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+}
+.input:focus-visible,.select:focus-visible,.seg input:focus-visible+span,.chk input:focus-visible+.box{
+  outline:2px solid var(--focus);outline-offset:2px
+}
+.money{position:relative}
+.money .peso{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:15px;pointer-events:none}
+.money .input{padding-left:26px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:360px){.row2{grid-template-columns:1fr}}
+
+.seg{display:flex;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden}
+.seg label{flex:1;display:block;position:relative;min-width:0}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg span{
+  display:block;text-align:center;padding:8px 6px;background:var(--surface);
+  font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;
+  transition:background .13s,color .13s;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;
+}
+.seg input:checked+span{background:var(--accent);color:#fff}
+
+.chk{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.chk input{position:absolute;opacity:0;width:1px;height:1px}
+.chk .box{
+  flex:none;width:19px;height:19px;margin-top:1px;border-radius:5px;
+  border:1.5px solid var(--line-strong);background:var(--surface);
+  display:grid;place-items:center;transition:background .13s,border-color .13s;
+}
+.chk .box::after{content:"";width:9px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) scale(.5);opacity:0;transition:opacity .13s,transform .13s;margin-top:-2px}
+.chk input:checked+.box{background:var(--accent);border-color:var(--accent)}
+.chk input:checked+.box::after{opacity:1;transform:rotate(-45deg) scale(1)}
+.chk .txt{font-size:13.5px;font-weight:600;line-height:1.35}
+.chk .txt em{display:block;font-style:normal;font-weight:400;font-size:11.5px;color:var(--ink-3);margin-top:2px}
+
+.sep{border:0;border-top:1px solid var(--line);margin:17px 0}
+.legend-t{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin:0 0 11px}
+
+/* ---------- hero ---------- */
+#panel-hero .card-b{padding-top:18px}
+.hero-lab{font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);margin:0}
+.hero-n{
+  font-family:"Bricolage Grotesque","Public Sans",sans-serif;
+  font-weight:800;font-size:clamp(34px,8.2vw,54px);
+  letter-spacing:-.035em;line-height:1.02;margin:5px 0 0;
+  color:var(--accent-ink);font-variant-numeric:tabular-nums;
+}
+.hero-sub{margin:7px 0 0;font-size:13px;color:var(--ink-2)}
+.hero-sub b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ---------- barra apilada ---------- */
+.bar{display:flex;gap:2px;height:40px;margin:20px 0 13px;border-radius:7px;overflow:hidden;background:var(--surface-2)}
+.seg-b{position:relative;min-width:2px;transition:flex-grow .32s cubic-bezier(.4,0,.2,1)}
+.seg-b:first-child{border-radius:7px 0 0 7px}
+.seg-b:last-child{border-radius:0 7px 7px 0}
+.seg-b:focus-visible{outline:2px solid var(--ink);outline-offset:2px;z-index:2}
+.keys{display:flex;flex-wrap:wrap;gap:7px 16px}
+.key{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2)}
+.key i{width:11px;height:11px;border-radius:3px;flex:none}
+.key b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ---------- desglose ---------- */
+.lines{display:flex;flex-direction:column;gap:0}
+.line{display:grid;grid-template-columns:11px 1fr auto;gap:11px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line)}
+.line:last-child{border-bottom:0}
+.line i{width:11px;height:11px;border-radius:3px;align-self:center}
+.line .nm{font-size:13.5px;min-width:0}
+.line .nm em{display:block;font-style:normal;font-size:11.5px;color:var(--ink-3);margin-top:1px}
+.line .vl{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.line.neg .vl{color:var(--ink)}
+.line.tot{border-top:1.5px solid var(--line-strong);border-bottom:0;margin-top:5px;padding-top:12px}
+.line.tot .nm{font-weight:700;font-size:14.5px}
+.line.tot .vl{font-size:17px;font-weight:700}
+.line.sum .nm{font-weight:600}
+.line.muted .nm,.line.muted .vl{color:var(--ink-3)}
+.gh{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);padding:15px 0 3px}
+.gh:first-child{padding-top:0}
+
+.foot{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink-3);line-height:1.55}
+.foot b{color:var(--ink-2);font-weight:600}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+
+  <a class="volver" href="https://calculadorass.github.io/"><em>←</em> Calculadoras</a>
+
+  <div class="masthead">
+    <div class="brand">
+      <h1>Calculadora de Sueldo Líquido</h1>
+      <p>Del bruto al líquido con cotizaciones, topes imponibles e Impuesto Único de Segunda Categoría.</p>
+    </div>
+    <div class="stamp"><span class="dot"></span><span id="periodo">Previred · Septiembre 2026</span></div>
+  </div>
+
+  <dl class="ribbon" id="ribbon">
+    <div class="ind"><dt>Valor UF</dt><dd class="num" id="i-uf">$41.057,20</dd></div>
+    <div class="ind"><dt>Valor UTM</dt><dd class="num" id="i-utm">$71.721</dd></div>
+    <div class="ind"><dt>Ingreso mínimo</dt><dd class="num" id="i-imm">$553.553</dd></div>
+    <div class="ind"><dt>Tope imponible</dt><dd class="num" id="i-tope">$3.695.148 <small>90 UF</small></dd></div>
+    <div class="ind"><dt>Tope cesantía</dt><dd class="num" id="i-topec">$5.550.933 <small>135,2 UF</small></dd></div>
+  </dl>
+
+  <div class="grid">
+
+    <!-- ============ FORMULARIO ============ -->
+    <section class="card" id="panel-form">
+      <div class="card-h"><h2>Tus datos</h2></div>
+      <div class="card-b">
+
+        <div class="field">
+          <label class="lab" for="f-base">Sueldo base mensual</label>
+          <div class="money"><span class="peso">$</span>
+            <input class="input num" id="f-base" type="text" inputmode="numeric" value="1.200.000" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="chk" for="f-grat">
+            <input type="checkbox" id="f-grat" checked>
+            <span class="box"></span>
+            <span class="txt">Incluir gratificación legal
+              <em>Art. 50: 25% del sueldo, con tope de <span id="grat-tope" class="num">$219.091</span> al mes</em>
+            </span>
+          </label>
+        </div>
+
+        <div class="field">
+          <label class="lab" for="f-otros">Otros haberes imponibles</label>
+          <div class="money"><span class="peso">$</span>
+            <input class="input num" id="f-otros" type="text" inputmode="numeric" value="0" autocomplete="off">
+          </div>
+          <p class="hint">Bonos, comisiones, horas extra.</p>
+        </div>
+
+        <hr class="sep">
+        <p class="legend-t">Previsión</p>
+
+        <div class="field">
+          <label class="lab" for="f-afp">AFP</label>
+          <select class="select" id="f-afp"></select>
+          <p class="hint" id="afp-hint">10% obligatorio + comisión de la administradora.</p>
+        </div>
+
+        <div class="field">
+          <label class="lab" for="f-salud-fonasa">Sistema de salud</label>
+          <div class="seg">
+            <label><input type="radio" name="salud" id="f-salud-fonasa" value="fonasa" checked><span>Fonasa</span></label>
+            <label><input type="radio" name="salud" id="f-salud-isapre" value="isapre"><span>Isapre</span></label>
+          </div>
+        </div>
+
+        <div class="field" id="wrap-plan" hidden>
+          <label class="lab" for="f-plan">Plan Isapre pactado (UF)</label>
+          <input class="input num" id="f-plan" type="text" inputmode="decimal" value="4,5" autocomplete="off">
+          <p class="hint">Si el plan supera el 7% legal, la diferencia se descuenta como cotización adicional.</p>
+        </div>
+
+        <div class="field">
+          <label class="lab" for="f-cont-indef">Tipo de contrato</label>
+          <div class="seg">
+            <label><input type="radio" name="contrato" id="f-cont-indef" value="indefinido" checked><span>Indefinido</span></label>
+            <label><input type="radio" name="contrato" id="f-cont-fijo" value="fijo"><span>Plazo fijo</span></label>
+          </div>
+          <p class="hint" id="afc-hint">Cesantía: 0,6% de cargo del trabajador.</p>
+        </div>
+
+        <hr class="sep">
+        <p class="legend-t">Haberes no imponibles</p>
+
+        <div class="field row2">
+          <div>
+            <label class="lab" for="f-colacion">Colación</label>
+            <div class="money"><span class="peso">$</span>
+              <input class="input num" id="f-colacion" type="text" inputmode="numeric" value="0" autocomplete="off">
+            </div>
+          </div>
+          <div>
+            <label class="lab" for="f-movil">Movilización</label>
+            <div class="money"><span class="peso">$</span>
+              <input class="input num" id="f-movil" type="text" inputmode="numeric" value="0" autocomplete="off">
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="lab" for="f-cargas">Cargas familiares</label>
+          <input class="input num" id="f-cargas" type="number" min="0" max="20" step="1" value="0" autocomplete="off">
+          <p class="hint" id="cargas-hint">El monto depende del tramo de renta.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ HERO ============ -->
+    <section class="card" id="panel-hero">
+      <div class="card-b">
+        <p class="hero-lab">Sueldo líquido</p>
+        <p class="hero-n num" id="out-liquido">$0</p>
+        <p class="hero-sub">De un total de haberes de <b class="num" id="out-haberes">$0</b> — te queda el <b id="out-pct">0%</b></p>
+
+        <div class="bar" id="bar" role="img" aria-label="Distribución del total de haberes"></div>
+        <div class="keys" id="keys"></div>
+      </div>
+    </section>
+
+    <!-- ============ DESGLOSE ============ -->
+    <section class="card" id="panel-detalle">
+      <div class="card-h"><h2>Desglose</h2></div>
+      <div class="card-b">
+        <div class="lines" id="lines"></div>
+        <p class="foot" id="foot"></p>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     Indicadores de respaldo — Previred, Septiembre 2026.
+     Si la base de datos del artifact tiene un período más nuevo,
+     estos valores se reemplazan al cargar.
+     ============================================================ */
+  var RESPALDO = {
+    periodo: "Septiembre 2026",
+    fuente: "Previred",
+    uf: 41057.20,
+    utm: 71721,
+    imm: 553553,
+    topeAfpUF: 90,
+    topeAfcUF: 135.2,
+    tasaAfcIndefinido: 0.006,
+    tasaSaludLegal: 0.07,
+    afps: [
+      {id:"uno",       nombre:"AFP Uno",       tasa:10.46},
+      {id:"modelo",    nombre:"AFP Modelo",    tasa:10.58},
+      {id:"planvital", nombre:"AFP PlanVital", tasa:11.16},
+      {id:"habitat",   nombre:"AFP Hábitat",   tasa:11.27},
+      {id:"capital",   nombre:"AFP Capital",   tasa:11.44},
+      {id:"cuprum",    nombre:"AFP Cuprum",    tasa:11.44},
+      {id:"provida",   nombre:"AFP Provida",   tasa:11.45}
+    ],
+    asignacion: [
+      {hasta:649039,  monto:22601, tramo:"A"},
+      {hasta:947990,  monto:13870, tramo:"B"},
+      {hasta:1478539, monto:4382,  tramo:"C"},
+      {hasta:null,    monto:0,     tramo:"D"}
+    ],
+    tramos: [
+      {hasta:13.5, factor:0,     rebaja:0},
+      {hasta:30,   factor:0.04,  rebaja:0.54},
+      {hasta:50,   factor:0.08,  rebaja:1.74},
+      {hasta:70,   factor:0.135, rebaja:4.49},
+      {hasta:90,   factor:0.23,  rebaja:11.14},
+      {hasta:120,  factor:0.304, rebaja:17.80},
+      {hasta:310,  factor:0.35,  rebaja:23.32},
+      {hasta:null, factor:0.40,  rebaja:38.82}
+    ]
+  };
+
+  var IND = RESPALDO;
+
+  /* ---------- formato ---------- */
+  var fCLP = new Intl.NumberFormat("es-CL",{style:"currency",currency:"CLP",maximumFractionDigits:0});
+  var fNum = new Intl.NumberFormat("es-CL",{maximumFractionDigits:0});
+  var fDec = new Intl.NumberFormat("es-CL",{minimumFractionDigits:2,maximumFractionDigits:2});
+  function clp(n){ return fCLP.format(Math.round(n||0)); }
+  function pct(n){ return new Intl.NumberFormat("es-CL",{maximumFractionDigits:1}).format(n)+"%"; }
+
+  function leerMonto(el){
+    var v = String(el.value||"").replace(/[^\d]/g,"");
+    return v ? parseInt(v,10) : 0;
+  }
+  function pintarMonto(el){
+    var n = leerMonto(el);
+    el.value = n ? fNum.format(n) : "";
+  }
+  function leerDecimal(el){
+    var v = String(el.value||"").replace(/\./g,"").replace(",",".").replace(/[^\d.]/g,"");
+    var n = parseFloat(v);
+    return isFinite(n) && n>0 ? n : 0;
+  }
+
+  /* ---------- elementos ---------- */
+  var $ = function(id){ return document.getElementById(id); };
+  var elBase=$("f-base"), elOtros=$("f-otros"), elGrat=$("f-grat"), elAfp=$("f-afp"),
+      elPlan=$("f-plan"), elWrapPlan=$("wrap-plan"), elColacion=$("f-colacion"),
+      elMovil=$("f-movil"), elCargas=$("f-cargas");
+
+  /* ---------- cálculo ---------- */
+  function tasaAfpActual(){
+    var a = IND.afps.filter(function(x){ return x.id === elAfp.value; })[0];
+    return a || IND.afps[0];
+  }
+
+  function impuestoUnico(base){
+    var enUTM = base / IND.utm, i, t;
+    for(i=0;i<IND.tramos.length;i++){
+      t = IND.tramos[i];
+      if(t.hasta === null || enUTM <= t.hasta){
+        return { monto: Math.max(0, base*t.factor - t.rebaja*IND.utm), factor: t.factor, rebaja: t.rebaja };
+      }
+    }
+    return { monto:0, factor:0, rebaja:0 };
+  }
+
+  function tramoAsignacion(renta){
+    var i, a;
+    for(i=0;i<IND.asignacion.length;i++){
+      a = IND.asignacion[i];
+      if(a.hasta === null || renta <= a.hasta) return a;
+    }
+    return IND.asignacion[IND.asignacion.length-1];
+  }
+
+  function calcular(){
+    var base = leerMonto(elBase);
+    var otros = leerMonto(elOtros);
+
+    var topeGrat = 4.75 * IND.imm / 12;
+    var gratificacion = elGrat.checked ? Math.min(0.25*base, topeGrat) : 0;
+
+    var imponible = base + gratificacion + otros;
+
+    var topeAfp = IND.topeAfpUF * IND.uf;
+    var topeAfc = IND.topeAfcUF * IND.uf;
+    var baseAfp = Math.min(imponible, topeAfp);
+    var baseAfc = Math.min(imponible, topeAfc);
+
+    var afpSel = tasaAfpActual();
+    var afp = baseAfp * (afpSel.tasa/100);
+
+    var saludLegal = baseAfp * IND.tasaSaludLegal;
+    var esIsapre = $("f-salud-isapre").checked;
+    var planPesos = esIsapre ? leerDecimal(elPlan) * IND.uf : 0;
+    var saludTotal = esIsapre ? Math.max(planPesos, saludLegal) : saludLegal;
+    var saludAdicional = saludTotal - saludLegal;
+
+    var esIndefinido = $("f-cont-indef").checked;
+    var afc = esIndefinido ? baseAfc * IND.tasaAfcIndefinido : 0;
+
+    // La cotización adicional de Isapre NO rebaja la base tributable.
+    var baseTributable = Math.max(0, imponible - afp - saludLegal - afc);
+    var imp = impuestoUnico(baseTributable);
+
+    var cargas = Math.max(0, parseInt(elCargas.value,10) || 0);
+    var tramoAsig = tramoAsignacion(imponible);
+    var asignacion = cargas * tramoAsig.monto;
+
+    var noImponibles = leerMonto(elColacion) + leerMonto(elMovil);
+    var totalHaberes = imponible + noImponibles + asignacion;
+    var totalDescuentos = afp + saludTotal + afc + imp.monto;
+    var liquido = totalHaberes - totalDescuentos;
+
+    return {
+      base:base, otros:otros, gratificacion:gratificacion, topeGrat:topeGrat,
+      imponible:imponible, topeAfp:topeAfp, topeAfc:topeAfc,
+      topeadoAfp: imponible > topeAfp, topeadoAfc: imponible > topeAfc,
+      afpSel:afpSel, afp:afp,
+      saludLegal:saludLegal, saludAdicional:saludAdicional, saludTotal:saludTotal, esIsapre:esIsapre,
+      afc:afc, esIndefinido:esIndefinido,
+      baseTributable:baseTributable, impuesto:imp.monto, factor:imp.factor, rebaja:imp.rebaja,
+      cargas:cargas, tramoAsig:tramoAsig, asignacion:asignacion,
+      noImponibles:noImponibles, totalHaberes:totalHaberes, totalDescuentos:totalDescuentos,
+      liquido:liquido
+    };
+  }
+
+  /* ---------- pintado ---------- */
+  var SERIES = [
+    {k:"liquido",  n:"Líquido",  c:"var(--c-liquido)"},
+    {k:"afp",      n:"AFP",      c:"var(--c-afp)"},
+    {k:"salud",    n:"Salud",    c:"var(--c-salud)"},
+    {k:"afc",      n:"Cesantía", c:"var(--c-afc)"},
+    {k:"impuesto", n:"Impuesto", c:"var(--c-imp)"}
+  ];
+
+  function pintarBarra(r){
+    var vals = { liquido:Math.max(0,r.liquido), afp:r.afp, salud:r.saludTotal, afc:r.afc, impuesto:r.impuesto };
+    var total = SERIES.reduce(function(s,x){ return s + vals[x.k]; },0) || 1;
+    var bar = $("bar"), keys = $("keys");
+    bar.textContent = ""; keys.textContent = "";
+
+    SERIES.forEach(function(s){
+      var v = vals[s.k];
+      var p = v/total*100;
+      if(v > 0){
+        var d = document.createElement("div");
+        d.className = "seg-b";
+        d.style.flex = "1 1 " + p + "%";
+        d.style.background = s.c;
+        d.tabIndex = 0;
+        d.title = s.n + ": " + clp(v) + " (" + pct(p) + ")";
+        bar.appendChild(d);
+      }
+      var k = document.createElement("div");
+      k.className = "key";
+      var i = document.createElement("i"); i.style.background = s.c;
+      var t = document.createElement("span"); t.textContent = s.n + " ";
+      var b = document.createElement("b"); b.textContent = pct(p);
+      k.appendChild(i); k.appendChild(t); k.appendChild(b);
+      keys.appendChild(k);
+    });
+  }
+
+  function fila(cls, color, nombre, detalle, valor){
+    var d = document.createElement("div");
+    d.className = "line" + (cls ? " "+cls : "");
+    var i = document.createElement("i");
+    if(color) i.style.background = color; else i.style.background = "transparent";
+    var nm = document.createElement("div"); nm.className = "nm";
+    nm.appendChild(document.createTextNode(nombre));
+    if(detalle){ var em = document.createElement("em"); em.textContent = detalle; nm.appendChild(em); }
+    var vl = document.createElement("div"); vl.className = "vl num"; vl.textContent = valor;
+    d.appendChild(i); d.appendChild(nm); d.appendChild(vl);
+    return d;
+  }
+  function grupo(txt){
+    var p = document.createElement("p"); p.className = "gh"; p.textContent = txt; return p;
+  }
+
+  function pintarDesglose(r){
+    var L = $("lines");
+    L.textContent = "";
+
+    L.appendChild(grupo("Haberes"));
+    L.appendChild(fila("", null, "Sueldo base", null, clp(r.base)));
+    if(r.gratificacion > 0){
+      var topeado = r.gratificacion >= r.topeGrat - 0.5;
+      L.appendChild(fila("", null, "Gratificación legal",
+        topeado ? "Topada en 4,75 IMM ÷ 12" : "25% del sueldo base", clp(r.gratificacion)));
+    }
+    if(r.otros > 0) L.appendChild(fila("", null, "Otros imponibles", null, clp(r.otros)));
+    L.appendChild(fila("sum", null, "Total imponible",
+      r.topeadoAfp ? "Cotiza hasta el tope de " + clp(r.topeAfp) : null, clp(r.imponible)));
+
+    L.appendChild(grupo("Descuentos"));
+    L.appendChild(fila("neg", "var(--c-afp)", r.afpSel.nombre,
+      fDec.format(r.afpSel.tasa) + "% (10% + " + fDec.format(r.afpSel.tasa-10) + "% comisión)", "− " + clp(r.afp)));
+    L.appendChild(fila("neg", "var(--c-salud)", r.esIsapre ? "Isapre — 7% legal" : "Fonasa",
+      "7% sobre " + clp(Math.min(r.imponible, r.topeAfp)), "− " + clp(r.saludLegal)));
+    if(r.saludAdicional > 0.5){
+      L.appendChild(fila("neg", "var(--c-salud)", "Isapre — cotización adicional",
+        "No rebaja la base tributable", "− " + clp(r.saludAdicional)));
+    }
+    L.appendChild(fila("neg", "var(--c-afc)", "Seguro de cesantía",
+      r.esIndefinido ? "0,6% (contrato indefinido)" : "Plazo fijo: lo paga el empleador",
+      r.afc > 0 ? "− " + clp(r.afc) : clp(0)));
+    L.appendChild(fila("neg", "var(--c-imp)", "Impuesto Único 2ª Categoría",
+      r.impuesto > 0
+        ? "Base " + clp(r.baseTributable) + " · factor " + pct(r.factor*100)
+        : "Exento — base bajo 13,5 UTM (" + clp(13.5*IND.utm) + ")",
+      r.impuesto > 0 ? "− " + clp(r.impuesto) : clp(0)));
+    L.appendChild(fila("sum", null, "Total descuentos", null, "− " + clp(r.totalDescuentos)));
+
+    if(r.noImponibles > 0 || r.asignacion > 0){
+      L.appendChild(grupo("No imponibles"));
+      if(r.noImponibles > 0) L.appendChild(fila("", null, "Colación y movilización", "Libres de cotización e impuesto", "+ " + clp(r.noImponibles)));
+      if(r.asignacion > 0) L.appendChild(fila("", null, "Asignación familiar",
+        r.cargas + (r.cargas===1?" carga":" cargas") + " · tramo " + r.tramoAsig.tramo + " (" + clp(r.tramoAsig.monto) + " c/u)",
+        "+ " + clp(r.asignacion)));
+      else if(r.cargas > 0) L.appendChild(fila("muted", null, "Asignación familiar",
+        "Tramo D — renta sobre " + clp(1478539) + ", sin pago", clp(0)));
+    } else if(r.cargas > 0){
+      L.appendChild(grupo("No imponibles"));
+      L.appendChild(fila("muted", null, "Asignación familiar", "Tramo D — sin pago por tramo de renta", clp(0)));
+    }
+
+    L.appendChild(fila("tot", "var(--c-liquido)", "Sueldo líquido", null, clp(r.liquido)));
+  }
+
+  function pintarPie(r){
+    var partes = [];
+    partes.push("Tope imponible AFP y salud: " + fDec.format(IND.topeAfpUF) + " UF = " + clp(r.topeAfp) + ".");
+    partes.push("Tope seguro de cesantía: " + fDec.format(IND.topeAfcUF) + " UF = " + clp(r.topeAfc) + ".");
+    partes.push("La cotización adicional de Isapre por sobre el 7% no rebaja la base tributable.");
+    partes.push("Estimación referencial: no considera APV, anticipos, préstamos ni descuentos pactados con el empleador.");
+    $("foot").textContent = partes.join(" ");
+  }
+
+  function render(){
+    var r = calcular();
+    $("out-liquido").textContent = clp(r.liquido);
+    $("out-haberes").textContent = clp(r.totalHaberes);
+    $("out-pct").textContent = r.totalHaberes > 0 ? pct(r.liquido/r.totalHaberes*100) : "0%";
+    pintarBarra(r);
+    pintarDesglose(r);
+    pintarPie(r);
+
+    $("afp-hint").textContent = "Tasa total " + fDec.format(r.afpSel.tasa) + "%: 10% obligatorio + " + fDec.format(r.afpSel.tasa-10) + "% de comisión.";
+    $("afc-hint").textContent = r.esIndefinido
+      ? "Cesantía: 0,6% de cargo del trabajador (el empleador aporta 2,4%)."
+      : "En plazo fijo el trabajador no aporta: el empleador paga el 3%.";
+    $("cargas-hint").textContent = r.cargas > 0
+      ? "Tramo " + r.tramoAsig.tramo + " — " + clp(r.tramoAsig.monto) + " por carga."
+      : "El monto depende del tramo de renta.";
+    $("grat-tope").textContent = clp(4.75*IND.imm/12);
+  }
+
+  /* ---------- indicadores en pantalla ---------- */
+  function pintarIndicadores(){
+    $("periodo").textContent = IND.fuente + " · " + IND.periodo;
+    $("i-uf").textContent = "$" + fDec.format(IND.uf);
+    $("i-utm").textContent = clp(IND.utm);
+    $("i-imm").textContent = clp(IND.imm);
+    $("i-tope").textContent = clp(IND.topeAfpUF*IND.uf);
+    var s1 = document.createElement("small"); s1.textContent = " " + fDec.format(IND.topeAfpUF) + " UF";
+    $("i-tope").appendChild(s1);
+    $("i-topec").textContent = clp(IND.topeAfcUF*IND.uf);
+    var s2 = document.createElement("small"); s2.textContent = " " + fDec.format(IND.topeAfcUF) + " UF";
+    $("i-topec").appendChild(s2);
+  }
+
+  function llenarAfps(){
+    var prev = elAfp.value;
+    elAfp.textContent = "";
+    IND.afps.forEach(function(a){
+      var o = document.createElement("option");
+      o.value = a.id;
+      o.textContent = a.nombre + " — " + fDec.format(a.tasa) + "%";
+      elAfp.appendChild(o);
+    });
+    elAfp.value = prev && IND.afps.some(function(a){return a.id===prev;}) ? prev : "modelo";
+  }
+
+  /* ---------- eventos ---------- */
+  [elBase, elOtros, elColacion, elMovil].forEach(function(el){
+    el.addEventListener("input", function(){
+      var pos = el.value.length - el.selectionStart;
+      pintarMonto(el);
+      try{ var np = Math.max(0, el.value.length - pos); el.setSelectionRange(np,np); }catch(e){}
+      render();
+    });
+    el.addEventListener("blur", function(){ if(!el.value) el.value = "0"; render(); });
+  });
+  [elGrat, elAfp, elPlan, elCargas].forEach(function(el){
+    el.addEventListener("input", render);
+    el.addEventListener("change", render);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="salud"]'), function(el){
+    el.addEventListener("change", function(){
+      elWrapPlan.hidden = !$("f-salud-isapre").checked;
+      render();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="contrato"]'), function(el){
+    el.addEventListener("change", render);
+  });
+
+  /* ---------- arranque ---------- */
+  pintarIndicadores();
+  llenarAfps();
+  render();
+
+  /* ---------- indicadores al día desde la base de datos ----------
+     La página funciona completa con los valores de respaldo; si hay
+     un período más nuevo guardado, se aplica sin recargar.          */
+  function normalizar(d){
+    if(!d || typeof d !== "object") return null;
+    var n = {
+      periodo: typeof d.periodo === "string" ? d.periodo : RESPALDO.periodo,
+      fuente:  typeof d.fuente  === "string" ? d.fuente  : RESPALDO.fuente,
+      uf: +d.uf, utm: +d.utm, imm: +d.imm,
+      topeAfpUF: +d.topeAfpUF, topeAfcUF: +d.topeAfcUF,
+      tasaAfcIndefinido: isFinite(+d.tasaAfcIndefinido) ? +d.tasaAfcIndefinido : RESPALDO.tasaAfcIndefinido,
+      tasaSaludLegal: isFinite(+d.tasaSaludLegal) ? +d.tasaSaludLegal : RESPALDO.tasaSaludLegal,
+      afps: Array.isArray(d.afps) ? d.afps.filter(function(a){
+              return a && typeof a.id==="string" && typeof a.nombre==="string" && isFinite(+a.tasa);
+            }).map(function(a){ return {id:a.id, nombre:a.nombre, tasa:+a.tasa}; }) : [],
+      asignacion: Array.isArray(d.asignacion) ? d.asignacion.map(function(a){
+              return {hasta: a.hasta===null?null:+a.hasta, monto:+a.monto, tramo:String(a.tramo||"")};
+            }) : RESPALDO.asignacion,
+      tramos: Array.isArray(d.tramos) && d.tramos.length ? d.tramos.map(function(t){
+              return {hasta: t.hasta===null?null:+t.hasta, factor:+t.factor, rebaja:+t.rebaja};
+            }) : RESPALDO.tramos
+    };
+    if(!(n.uf>0 && n.utm>0 && n.imm>0 && n.topeAfpUF>0 && n.topeAfcUF>0)) return null;
+    if(!n.afps.length) n.afps = RESPALDO.afps;
+    if(!n.asignacion.length) n.asignacion = RESPALDO.asignacion;
+    return n;
+  }
+
+  function aplicar(d){
+    var limpio = normalizar(d);
+    if(!limpio) return false;
+    IND = limpio;
+    pintarIndicadores();
+    llenarAfps();
+    render();
+    return true;
+  }
+
+  (function(){
+    // Sitio estático: indicadores.json vive en la raíz del sitio (../) cuando la
+    // calculadora está en su propia carpeta, y junto a la página cuando se publica
+    // como Artifact. Se prueban ambas rutas, en ese orden.
+    function desdeArchivo(){
+      var rutas = ["../indicadores.json", "./indicadores.json"];
+      function intentar(i){
+        if(i >= rutas.length) return;   // se queda con los valores de respaldo
+        try{
+          fetch(rutas[i], {cache:"no-cache"})
+            .then(function(r){ return r.ok ? r.json() : null; })
+            .then(function(d){ if(!(d && aplicar(d))) intentar(i+1); })
+            ["catch"](function(){ intentar(i+1); });
+        }catch(e){ intentar(i+1); }
+      }
+      intentar(0);
+    }
+    // Artifact publicado: la base de datos compartida.
+    if(window.claude && typeof window.claude.use === "function"){
+      Promise.resolve(window.claude.use("db")).then(function(db){
+        if(!db) return desdeArchivo();
+        return db.doc("indicadores/actual").get().then(function(snap){
+          if(snap && snap.exists && aplicar(snap.data())) return;
+          desdeArchivo();
+        });
+      })["catch"](desdeArchivo);
+      return;
+    }
+    desdeArchivo();
+  })();
+
+})();
+</script>
+
+</body>
+</html>

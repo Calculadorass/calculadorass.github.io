@@ -1,0 +1,114 @@
+{
+  "periodo": "Septiembre 2026",
+  "fuente": "Previred",
+  "uf": 41057.2,
+  "utm": 71721,
+  "imm": 553553,
+  "topeAfpUF": 90,
+  "topeAfcUF": 135.2,
+  "tasaAfcIndefinido": 0.006,
+  "tasaSaludLegal": 0.07,
+  "actualizado": "2026-09-22",
+  "origen": "https://www.previred.com/wp-content/uploads/2026/09/Indicadores-Previsionales-Previred-Septiembre-2026.pdf",
+  "afps": [
+    {
+      "id": "uno",
+      "nombre": "AFP Uno",
+      "tasa": 10.46
+    },
+    {
+      "id": "modelo",
+      "nombre": "AFP Modelo",
+      "tasa": 10.58
+    },
+    {
+      "id": "planvital",
+      "nombre": "AFP PlanVital",
+      "tasa": 11.16
+    },
+    {
+      "id": "habitat",
+      "nombre": "AFP Hábitat",
+      "tasa": 11.27
+    },
+    {
+      "id": "capital",
+      "nombre": "AFP Capital",
+      "tasa": 11.44
+    },
+    {
+      "id": "cuprum",
+      "nombre": "AFP Cuprum",
+      "tasa": 11.44
+    },
+    {
+      "id": "provida",
+      "nombre": "AFP Provida",
+      "tasa": 11.45
+    }
+  ],
+  "asignacion": [
+    {
+      "hasta": 649039,
+      "monto": 22601,
+      "tramo": "A"
+    },
+    {
+      "hasta": 947990,
+      "monto": 13870,
+      "tramo": "B"
+    },
+    {
+      "hasta": 1478539,
+      "monto": 4382,
+      "tramo": "C"
+    },
+    {
+      "hasta": null,
+      "monto": 0,
+      "tramo": "D"
+    }
+  ],
+  "tramos": [
+    {
+      "hasta": 13.5,
+      "factor": 0,
+      "rebaja": 0
+    },
+    {
+      "hasta": 30,
+      "factor": 0.04,
+      "rebaja": 0.54
+    },
+    {
+      "hasta": 50,
+      "factor": 0.08,
+      "rebaja": 1.74
+    },
+    {
+      "hasta": 70,
+      "factor": 0.135,
+      "rebaja": 4.49
+    },
+    {
+      "hasta": 90,
+      "factor": 0.23,
+      "rebaja": 11.14
+    },
+    {
+      "hasta": 120,
+      "factor": 0.304,
+      "rebaja": 17.8
+    },
+    {
+      "hasta": 310,
+      "factor": 0.35,
+      "rebaja": 23.32
+    },
+    {
+      "hasta": null,
+      "factor": 0.4,
+      "rebaja": 38.82
+    }
+  ]
+}
