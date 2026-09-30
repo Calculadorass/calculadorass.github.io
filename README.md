@@ -11,7 +11,7 @@ dependencias ni backend, servidas por GitHub Pages.
 |---|---|---|
 | **Sueldo líquido** | Disponible | [`/sueldo-liquido/`](https://calculadorass.github.io/sueldo-liquido/) |
 | **Boleta de honorarios** | Disponible | [`/boleta-honorarios/`](https://calculadorass.github.io/boleta-honorarios/) |
-| Bonos y aguinaldos | En preparación | — |
+| **Bono líquido** | Disponible | [`/bono-liquido/`](https://calculadorass.github.io/bono-liquido/) |
 
 ## Indicadores compartidos
 
@@ -42,10 +42,12 @@ los meses, el cambio de enero queda cubierto.
 src/portada.html          fuente de la portada
 src/sueldo-liquido.html   fuente de la calculadora de sueldo
 src/boleta-honorarios.html fuente de la calculadora de honorarios
+src/bono-liquido.html     fuente de la calculadora de bonos
 build.sh                  genera las páginas agregando el envoltorio HTML
 index.html                portada            (generado — no editar a mano)
 sueldo-liquido/index.html sueldo líquido     (generado — no editar a mano)
 boleta-honorarios/index.html honorarios      (generado — no editar a mano)
+bono-liquido/index.html   bono líquido       (generado — no editar a mano)
 indicadores.json          valores del mes, compartidos
 ```
 
@@ -81,6 +83,12 @@ navegador no puede cargar `indicadores.json` y las páginas caen al respaldo.
 
 Si la calculadora necesita un indicador que hoy no está en `indicadores.json`,
 agrégalo al archivo y actualiza la tarea programada para que lo mantenga al día.
+
+## Redondeo
+
+Los montos se llevan en pesos enteros y cada cotización se redondea al
+calcularse, como en una liquidación real. Así el desglose que muestra cada
+página suma exactamente el total, sin descuadrar por un peso.
 
 ## Alcance
 

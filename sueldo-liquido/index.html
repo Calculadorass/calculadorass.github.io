@@ -517,7 +517,10 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     var topeGrat = 4.75 * IND.imm / 12;
     var gratificacion = elGrat.checked ? Math.min(0.25*base, topeGrat) : 0;
 
-    var imponible = base + gratificacion + otros;
+    // Los montos se llevan en pesos enteros, como en una liquidación real: cada
+    // cotización se redondea al calcularse, de modo que el desglose suma
+    // exactamente el líquido en vez de descuadrar por un peso.
+    var imponible = Math.round(base + gratificacion + otros);
 
     var topeAfp = IND.topeAfpUF * IND.uf;
     var topeAfc = IND.topeAfcUF * IND.uf;
@@ -525,20 +528,21 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     var baseAfc = Math.min(imponible, topeAfc);
 
     var afpSel = tasaAfpActual();
-    var afp = baseAfp * (afpSel.tasa/100);
+    var afp = Math.round(baseAfp * (afpSel.tasa/100));
 
-    var saludLegal = baseAfp * IND.tasaSaludLegal;
+    var saludLegal = Math.round(baseAfp * IND.tasaSaludLegal);
     var esIsapre = $("f-salud-isapre").checked;
     var planPesos = esIsapre ? leerDecimal(elPlan) * IND.uf : 0;
-    var saludTotal = esIsapre ? Math.max(planPesos, saludLegal) : saludLegal;
+    var saludTotal = esIsapre ? Math.max(Math.round(planPesos), saludLegal) : saludLegal;
     var saludAdicional = saludTotal - saludLegal;
 
     var esIndefinido = $("f-cont-indef").checked;
-    var afc = esIndefinido ? baseAfc * IND.tasaAfcIndefinido : 0;
+    var afc = esIndefinido ? Math.round(baseAfc * IND.tasaAfcIndefinido) : 0;
 
     // La cotización adicional de Isapre NO rebaja la base tributable.
     var baseTributable = Math.max(0, imponible - afp - saludLegal - afc);
     var imp = impuestoUnico(baseTributable);
+    imp.monto = Math.round(imp.monto);
 
     var cargas = Math.max(0, parseInt(elCargas.value,10) || 0);
     var tramoAsig = tramoAsignacion(imponible);

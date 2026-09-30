@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Calcula el bono bruto necesario para que llegue un monto líquido exacto, considerando cotizaciones, topes imponibles e Impuesto Único.">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font:14px/1.5 system-ui,sans-serif;background:#fafaf9}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>Calculadora de Bono Líquido</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+
+<style>
+:root{
+  --bg:#F6F8F7;
+  --surface:#FFFFFF;
+  --surface-2:#F0F4F2;
+  --ink:#12201D;
+  --ink-2:#4C5C58;
+  --ink-3:#7C8C87;
+  --line:#E1E8E5;
+  --line-strong:#CBD6D2;
+  --accent:#00897A;
+  --accent-ink:#00655B;
+  --accent-soft:#E4F2EF;
+  --focus:#00897A;
+
+  --c-liquido:#00897A;
+  --c-afp:#C2610C;
+  --c-salud:#2563C9;
+  --c-afc:#8F7500;
+  --c-imp:#A82D86;
+
+  --shadow:0 1px 2px rgba(18,32,29,.05), 0 8px 24px -12px rgba(18,32,29,.18);
+  --r:14px;
+  --r-sm:9px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0C1412; --surface:#141E1B; --surface-2:#1A2622;
+    --ink:#E7EFEC; --ink-2:#9FB0AB; --ink-3:#718380;
+    --line:#23322E; --line-strong:#33453F;
+    --accent:#2FB39B; --accent-ink:#57C9B3; --accent-soft:#12302A; --focus:#2FB39B;
+    --c-liquido:#1E9B85; --c-afp:#C4762A; --c-salud:#4A80D6; --c-afc:#9A8226; --c-imp:#C05CA0;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0C1412; --surface:#141E1B; --surface-2:#1A2622;
+  --ink:#E7EFEC; --ink-2:#9FB0AB; --ink-3:#718380;
+  --line:#23322E; --line-strong:#33453F;
+  --accent:#2FB39B; --accent-ink:#57C9B3; --accent-soft:#12302A; --focus:#2FB39B;
+  --c-liquido:#1E9B85; --c-afp:#C4762A; --c-salud:#4A80D6; --c-afc:#9A8226; --c-imp:#C05CA0;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Public Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:28px 56px}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+/* ---------- encabezado ---------- */
+.volver{display:inline-flex;align-items:center;gap:6px;margin-bottom:12px;font-size:12.5px;font-weight:600;color:var(--ink-3);text-decoration:none}
+.volver:hover{color:var(--accent-ink)}
+.volver:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:4px}
+.volver em{font-style:normal;transition:transform .16s}
+.volver:hover em{transform:translateX(-3px)}
+
+.masthead{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
+.brand h1{font-family:"Bricolage Grotesque","Public Sans",sans-serif;font-weight:800;font-size:clamp(25px,5.2vw,36px);letter-spacing:-.027em;line-height:1.05;margin:0;text-wrap:balance}
+.brand p{margin:5px 0 0;color:var(--ink-2);font-size:14px;max-width:48ch}
+.stamp{display:inline-flex;align-items:center;gap:8px;background:var(--accent-soft);color:var(--accent-ink);border:1px solid color-mix(in srgb,var(--accent) 26%,transparent);border-radius:100px;padding:6px 13px;font-size:12px;font-weight:600;white-space:nowrap}
+.stamp .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}
+
+/* ---------- tarjetas ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:16px}
+.card-h{padding:15px 18px 0}
+.card-h h2{margin:0;font-family:"Bricolage Grotesque","Public Sans",sans-serif;font-size:12.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.card-b{padding:16px 18px 19px}
+
+/* ---------- formulario ---------- */
+.rejilla{display:grid;gap:14px;grid-template-columns:1fr 1fr}
+@media (max-width:520px){.rejilla{grid-template-columns:1fr}}
+.campo{min-width:0}
+label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--ink)}
+.input,.select{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-sm);padding:9px 11px}
+.input{font-variant-numeric:tabular-nums}
+.select{appearance:none;padding-right:34px;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink-3) 50%),linear-gradient(135deg,var(--ink-3) 50%,transparent 50%);
+  background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+.input:focus-visible,.select:focus-visible,.seg input:focus-visible+span,.chk input:focus-visible+.box{outline:2px solid var(--focus);outline-offset:2px}
+.money{position:relative}
+.money .peso{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:15px;pointer-events:none}
+.money .input{padding-left:26px}
+.hint{font-size:11.5px;color:var(--ink-3);margin:6px 0 0;line-height:1.45}
+
+.seg{display:flex;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden}
+.seg label{flex:1;display:block;position:relative;min-width:0}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg span{display:block;text-align:center;padding:8px 6px;background:var(--surface);font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;transition:background .13s,color .13s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg input:checked+span{background:var(--accent);color:#fff}
+
+.chk{display:flex;gap:10px;align-items:flex-start;cursor:pointer;margin-top:3px}
+.chk input{position:absolute;opacity:0;width:1px;height:1px}
+.chk .box{flex:none;width:19px;height:19px;margin-top:1px;border-radius:5px;border:1.5px solid var(--line-strong);background:var(--surface);display:grid;place-items:center;transition:background .13s,border-color .13s}
+.chk .box::after{content:"";width:9px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) scale(.5);opacity:0;transition:opacity .13s,transform .13s;margin-top:-2px}
+.chk input:checked+.box{background:var(--accent);border-color:var(--accent)}
+.chk input:checked+.box::after{opacity:1;transform:rotate(-45deg) scale(1)}
+.chk .txt{font-size:13px;font-weight:600;line-height:1.35}
+.chk .txt em{display:block;font-style:normal;font-weight:400;font-size:11.5px;color:var(--ink-3);margin-top:2px}
+
+/* ---------- modo ---------- */
+.modo{display:flex;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;margin-bottom:16px}
+.modo label{flex:1;display:block;position:relative;min-width:0}
+.modo input{position:absolute;opacity:0;width:1px;height:1px}
+.modo span{display:block;text-align:center;padding:10px 8px;background:var(--surface);font-size:13.5px;font-weight:600;color:var(--ink-2);cursor:pointer;transition:background .13s,color .13s}
+.modo span b{display:block;font-size:11px;font-weight:500;opacity:.78;margin-top:2px}
+.modo input:checked+span{background:var(--accent);color:#fff}
+.modo input:focus-visible+span{outline:2px solid var(--focus);outline-offset:-2px}
+.money-xl .peso{font-size:21px;left:14px}
+.money-xl .input{font-size:21px;font-weight:600;padding:12px 14px 12px 32px}
+
+/* ---------- resultado ---------- */
+.hero-lab{font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);margin:0}
+.hero-n{font-family:"Bricolage Grotesque","Public Sans",sans-serif;font-weight:800;font-size:clamp(32px,7.6vw,48px);letter-spacing:-.035em;line-height:1.02;margin:5px 0 0;color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.hero-sub{margin:7px 0 0;font-size:13.5px;color:var(--ink-2)}
+.hero-sub b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+
+.bar{display:flex;gap:2px;height:36px;margin:19px 0 12px;border-radius:7px;overflow:hidden;background:var(--surface-2)}
+.seg-b{position:relative;min-width:2px;transition:flex-grow .3s cubic-bezier(.4,0,.2,1)}
+.seg-b:first-child{border-radius:7px 0 0 7px}
+.seg-b:last-child{border-radius:0 7px 7px 0}
+.keys{display:flex;flex-wrap:wrap;gap:7px 16px}
+.key{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2)}
+.key i{width:11px;height:11px;border-radius:3px;flex:none}
+.key b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ---------- desglose ---------- */
+.lines{display:flex;flex-direction:column}
+.line{display:grid;grid-template-columns:11px 1fr auto;gap:11px;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--line)}
+.line:last-child{border-bottom:0}
+.line i{width:11px;height:11px;border-radius:3px;align-self:center}
+.line .nm{font-size:13.5px;min-width:0}
+.line .nm em{display:block;font-style:normal;font-size:11.5px;color:var(--ink-3);margin-top:2px;line-height:1.4}
+.line .vl{font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.line.tot{border-top:1.5px solid var(--line-strong);border-bottom:0;padding-top:12px}
+.line.tot .nm{font-weight:700;font-size:14.5px}
+.line.tot .vl{font-size:17px;font-weight:700}
+
+/* ---------- tasa marginal ---------- */
+.marginal{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
+@media (max-width:460px){.marginal{grid-template-columns:1fr;gap:11px}}
+.marginal .cifra{font-family:"Bricolage Grotesque","Public Sans",sans-serif;font-weight:800;font-size:38px;letter-spacing:-.03em;line-height:1;color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.marginal p{margin:0;font-size:13px;color:var(--ink-2);line-height:1.5}
+.marginal p b{color:var(--ink);font-weight:600}
+
+/* ---------- comparativa ---------- */
+.comp{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+@media (max-width:460px){.comp{grid-template-columns:1fr}}
+.comp div{background:var(--surface);padding:12px 14px}
+.comp div.dest{background:var(--accent-soft)}
+.comp dt{margin:0;font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.comp div.dest dt{color:var(--accent-ink)}
+.comp dd{margin:3px 0 0;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+.aviso{margin:14px 0 0;padding:11px 13px;border-radius:var(--r-sm);background:var(--surface-2);border:1px solid var(--line);font-size:12px;color:var(--ink-2);line-height:1.5}
+.seccion{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin:0 0 11px}
+.foot{margin-top:20px;font-size:11.5px;color:var(--ink-3);line-height:1.6}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+
+  <a class="volver" href="https://calculadorass.github.io/"><em>←</em> Calculadoras</a>
+
+  <div class="masthead">
+    <div class="brand">
+      <h1>Bono Líquido</h1>
+      <p>Cuánto debe ser el bono bruto para que llegue un monto líquido exacto al bolsillo.</p>
+    </div>
+    <div class="stamp"><span class="dot"></span><span id="periodo">Previred · Septiembre 2026</span></div>
+  </div>
+
+  <section class="card">
+    <div class="card-h"><h2>Situación de la persona</h2></div>
+    <div class="card-b">
+      <div class="rejilla">
+        <div class="campo">
+          <label class="lab" for="f-base">Sueldo base mensual</label>
+          <div class="money"><span class="peso">$</span>
+            <input class="input num" id="f-base" type="text" inputmode="numeric" value="1.200.000" autocomplete="off">
+          </div>
+        </div>
+        <div class="campo">
+          <label class="lab" for="f-afp">AFP</label>
+          <select class="select" id="f-afp"></select>
+        </div>
+        <div class="campo">
+          <label class="lab" for="f-salud-fonasa">Salud</label>
+          <div class="seg">
+            <label><input type="radio" name="salud" id="f-salud-fonasa" value="fonasa" checked><span>Fonasa</span></label>
+            <label><input type="radio" name="salud" id="f-salud-isapre" value="isapre"><span>Isapre</span></label>
+          </div>
+        </div>
+        <div class="campo">
+          <label class="lab" for="f-cont-indef">Contrato</label>
+          <div class="seg">
+            <label><input type="radio" name="contrato" id="f-cont-indef" value="indefinido" checked><span>Indefinido</span></label>
+            <label><input type="radio" name="contrato" id="f-cont-fijo" value="fijo"><span>Plazo fijo</span></label>
+          </div>
+        </div>
+        <div class="campo" id="wrap-plan" hidden>
+          <label class="lab" for="f-plan">Plan Isapre (UF)</label>
+          <input class="input num" id="f-plan" type="text" inputmode="decimal" value="4,5" autocomplete="off">
+        </div>
+        <div class="campo">
+          <label class="chk" for="f-grat">
+            <input type="checkbox" id="f-grat" checked>
+            <span class="box"></span>
+            <span class="txt">Recibe gratificación legal
+              <em>25% del sueldo base, con tope mensual</em>
+            </span>
+          </label>
+        </div>
+      </div>
+      <p class="hint">El bono se suma a la remuneración del mes, así que estos datos definen cuánto se le descuenta.</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-b">
+      <div class="modo">
+        <label>
+          <input type="radio" name="modo" id="m-liquido" value="liquido" checked>
+          <span>Quiero que reciba<b>bono líquido</b></span>
+        </label>
+        <label>
+          <input type="radio" name="modo" id="m-bruto" value="bruto">
+          <span>Voy a pagar<b>bono bruto</b></span>
+        </label>
+      </div>
+
+      <label class="lab" for="f-bono" id="bono-lab">Bono líquido que quiero que reciba</label>
+      <div class="money money-xl"><span class="peso">$</span>
+        <input class="input num" id="f-bono" type="text" inputmode="numeric" value="300.000" autocomplete="off">
+      </div>
+      <p class="hint" id="bono-hint">Lo que quieres que le llegue de más en el líquido del mes.</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-b">
+      <p class="hero-lab" id="res-lab">Bono bruto necesario</p>
+      <p class="hero-n num" id="res-n">$0</p>
+      <p class="hero-sub" id="res-sub"></p>
+
+      <div class="bar" id="bar" role="img" aria-label="Reparto del bono bruto"></div>
+      <div class="keys" id="keys"></div>
+      <p class="aviso" id="aviso" hidden></p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-h"><h2>En qué se va el bono</h2></div>
+    <div class="card-b">
+      <div class="lines" id="lines"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-b">
+      <div class="marginal">
+        <div class="cifra num" id="mg-cifra">0%</div>
+        <p id="mg-txt"></p>
+      </div>
+    </div>
+  </section>
+
+  <p class="seccion">Líquido del mes</p>
+  <dl class="comp" id="comp"></dl>
+
+  <p class="foot" id="foot"></p>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     Valores de respaldo — Previred, Septiembre 2026.
+     Si indicadores.json trae un período más nuevo, se reemplazan.
+     ============================================================ */
+  var RESPALDO = {
+    periodo: "Septiembre 2026",
+    fuente: "Previred",
+    uf: 41057.20, utm: 71721, imm: 553553,
+    topeAfpUF: 90, topeAfcUF: 135.2,
+    tasaAfcIndefinido: 0.006, tasaSaludLegal: 0.07,
+    afps: [
+      {id:"uno", nombre:"AFP Uno", tasa:10.46},
+      {id:"modelo", nombre:"AFP Modelo", tasa:10.58},
+      {id:"planvital", nombre:"AFP PlanVital", tasa:11.16},
+      {id:"habitat", nombre:"AFP Hábitat", tasa:11.27},
+      {id:"capital", nombre:"AFP Capital", tasa:11.44},
+      {id:"cuprum", nombre:"AFP Cuprum", tasa:11.44},
+      {id:"provida", nombre:"AFP Provida", tasa:11.45}
+    ],
+    tramos: [
+      {hasta:13.5, factor:0,     rebaja:0},
+      {hasta:30,   factor:0.04,  rebaja:0.54},
+      {hasta:50,   factor:0.08,  rebaja:1.74},
+      {hasta:70,   factor:0.135, rebaja:4.49},
+      {hasta:90,   factor:0.23,  rebaja:11.14},
+      {hasta:120,  factor:0.304, rebaja:17.80},
+      {hasta:310,  factor:0.35,  rebaja:23.32},
+      {hasta:null, factor:0.40,  rebaja:38.82}
+    ]
+  };
+
+  var IND = RESPALDO;
+
+  var fCLP = new Intl.NumberFormat("es-CL",{style:"currency",currency:"CLP",maximumFractionDigits:0});
+  var fNum = new Intl.NumberFormat("es-CL",{maximumFractionDigits:0});
+  var fDec = new Intl.NumberFormat("es-CL",{minimumFractionDigits:2,maximumFractionDigits:2});
+  var f1   = new Intl.NumberFormat("es-CL",{maximumFractionDigits:1});
+  function clp(n){ return fCLP.format(Math.round(n||0)); }
+
+  var $ = function(id){ return document.getElementById(id); };
+  var elBase=$("f-base"), elAfp=$("f-afp"), elPlan=$("f-plan"), elWrapPlan=$("wrap-plan"),
+      elGrat=$("f-grat"), elBono=$("f-bono");
+
+  function leerMonto(el){
+    var v = String(el.value||"").replace(/[^\d]/g,"");
+    return v ? parseInt(v,10) : 0;
+  }
+  function leerDecimal(el){
+    var v = String(el.value||"").replace(/\./g,"").replace(",",".").replace(/[^\d.]/g,"");
+    var n = parseFloat(v);
+    return isFinite(n) && n>0 ? n : 0;
+  }
+  function esModoLiquido(){ return $("m-liquido").checked; }
+
+  /* ---------- parámetros de la persona ---------- */
+  function contexto(){
+    var base = leerMonto(elBase);
+    var topeGrat = 4.75 * IND.imm / 12;
+    var gratificacion = elGrat.checked ? Math.min(0.25*base, topeGrat) : 0;
+    var afpSel = IND.afps.filter(function(a){ return a.id === elAfp.value; })[0] || IND.afps[0];
+    return {
+      imponibleBase: Math.round(base + gratificacion),
+      base: base,
+      gratificacion: gratificacion,
+      tasaAfp: afpSel.tasa/100,
+      afpSel: afpSel,
+      esIsapre: $("f-salud-isapre").checked,
+      planPesos: $("f-salud-isapre").checked ? leerDecimal(elPlan) * IND.uf : 0,
+      esIndefinido: $("f-cont-indef").checked,
+      topeAfp: IND.topeAfpUF * IND.uf,
+      topeAfc: IND.topeAfcUF * IND.uf
+    };
+  }
+
+  function impuestoUnico(base){
+    var enUTM = base / IND.utm, i, t;
+    for(i=0;i<IND.tramos.length;i++){
+      t = IND.tramos[i];
+      if(t.hasta === null || enUTM <= t.hasta){
+        return Math.max(0, base*t.factor - t.rebaja*IND.utm);
+      }
+    }
+    return 0;
+  }
+
+  /* Liquidación completa para un total imponible dado.
+     Es el mismo cálculo de la calculadora de sueldo líquido: la cotización
+     adicional de Isapre se descuenta del líquido pero no rebaja la base
+     tributable. */
+  function liquidacion(imponible, c){
+    var baseAfp = Math.min(imponible, c.topeAfp);
+    var baseAfc = Math.min(imponible, c.topeAfc);
+    // Cada cotización se redondea a pesos enteros, como en una liquidación real:
+    // así el desglose suma exactamente el total en vez de descuadrar por un peso.
+    var afp = Math.round(baseAfp * c.tasaAfp);
+    var saludLegal = Math.round(baseAfp * IND.tasaSaludLegal);
+    var saludTotal = c.esIsapre ? Math.max(Math.round(c.planPesos), saludLegal) : saludLegal;
+    var afc = c.esIndefinido ? Math.round(baseAfc * IND.tasaAfcIndefinido) : 0;
+    var baseTributable = Math.max(0, imponible - afp - saludLegal - afc);
+    var impuesto = Math.round(impuestoUnico(baseTributable));
+    return {
+      imponible:imponible, afp:afp, salud:saludTotal, afc:afc,
+      baseTributable:baseTributable, impuesto:impuesto,
+      liquido: imponible - afp - saludTotal - afc - impuesto
+    };
+  }
+
+  function liquidoCon(bono, c){
+    return Math.round(liquidacion(c.imponibleBase + bono, c).liquido);
+  }
+
+  /* Bono bruto mínimo cuyo aumento del líquido alcanza el objetivo.
+     La función es creciente y lineal por tramos, así que una búsqueda
+     binaria sobre pesos enteros da el valor exacto. */
+  function brutoParaLiquido(objetivo, c){
+    if(objetivo <= 0) return 0;
+    var sinBono = liquidoCon(0, c);
+    var lo = 0, hi = Math.max(1000, objetivo * 2), guardia = 0;
+    while(liquidoCon(hi, c) - sinBono < objetivo && guardia < 60){ hi *= 2; guardia++; }
+    while(lo < hi){
+      var mid = Math.floor((lo + hi) / 2);
+      if(liquidoCon(mid, c) - sinBono >= objetivo) hi = mid; else lo = mid + 1;
+    }
+    return lo;
+  }
+
+  function calcular(){
+    var c = contexto();
+    var monto = leerMonto(elBono);
+    var bruto = esModoLiquido() ? brutoParaLiquido(monto, c) : monto;
+
+    var sin = liquidacion(c.imponibleBase, c);
+    var con = liquidacion(c.imponibleBase + bruto, c);
+    var neto = Math.round(con.liquido) - Math.round(sin.liquido);
+
+    return {
+      c:c, bruto:bruto, neto:neto, objetivo:monto,
+      sin:sin, con:con,
+      dAfp:      con.afp      - sin.afp,
+      dSalud:    con.salud    - sin.salud,
+      dAfc:      con.afc      - sin.afc,
+      dImpuesto: con.impuesto - sin.impuesto,
+      topeado: c.imponibleBase + bruto > c.topeAfp && c.imponibleBase < c.topeAfp,
+      sobreTope: c.imponibleBase >= c.topeAfp
+    };
+  }
+
+  /* ---------- pintado ---------- */
+  var SERIES = [
+    {k:"neto",      n:"Llega al bolsillo", c:"var(--c-liquido)"},
+    {k:"dAfp",      n:"AFP",               c:"var(--c-afp)"},
+    {k:"dSalud",    n:"Salud",             c:"var(--c-salud)"},
+    {k:"dAfc",      n:"Cesantía",          c:"var(--c-afc)"},
+    {k:"dImpuesto", n:"Impuesto",          c:"var(--c-imp)"}
+  ];
+
+  function pintarBarra(r){
+    var total = r.bruto || 1;
+    var bar = $("bar"), keys = $("keys");
+    bar.textContent = ""; keys.textContent = "";
+    SERIES.forEach(function(s){
+      var v = Math.max(0, r[s.k]);
+      var p = v / total * 100;
+      if(v > 0){
+        var d = document.createElement("div");
+        d.className = "seg-b";
+        d.style.flex = "1 1 " + p + "%";
+        d.style.background = s.c;
+        d.title = s.n + ": " + clp(v);
+        bar.appendChild(d);
+      }
+      var k = document.createElement("div");
+      k.className = "key";
+      var i = document.createElement("i"); i.style.background = s.c;
+      var t = document.createElement("span"); t.textContent = s.n + " ";
+      var b = document.createElement("b"); b.textContent = f1.format(p) + "%";
+      k.appendChild(i); k.appendChild(t); k.appendChild(b);
+      keys.appendChild(k);
+    });
+  }
+
+  function fila(cls, color, nombre, detalle, valor){
+    var d = document.createElement("div");
+    d.className = "line" + (cls ? " "+cls : "");
+    var i = document.createElement("i");
+    i.style.background = color || "transparent";
+    var nm = document.createElement("div"); nm.className = "nm";
+    nm.appendChild(document.createTextNode(nombre));
+    if(detalle){ var em = document.createElement("em"); em.textContent = detalle; nm.appendChild(em); }
+    var vl = document.createElement("div"); vl.className = "vl num"; vl.textContent = valor;
+    d.appendChild(i); d.appendChild(nm); d.appendChild(vl);
+    return d;
+  }
+
+  function pintarDesglose(r){
+    var L = $("lines");
+    L.textContent = "";
+    L.appendChild(fila("", null, "Bono bruto", "Lo que se agrega a la remuneración del mes", clp(r.bruto)));
+
+    var detAfp = r.sobreTope
+      ? "Ya estaba sobre el tope imponible: no aumenta"
+      : (r.topeado ? "Solo hasta el tope de " + clp(r.c.topeAfp) : fDec.format(r.c.afpSel.tasa) + "% del bono");
+    L.appendChild(fila("", "var(--c-afp)", r.c.afpSel.nombre, detAfp, r.dAfp > 0.5 ? "− " + clp(r.dAfp) : clp(0)));
+
+    var detSalud = r.sobreTope
+      ? "Ya estaba sobre el tope imponible: no aumenta"
+      : (r.topeado ? "Solo hasta el tope imponible" : "7% del bono");
+    L.appendChild(fila("", "var(--c-salud)", r.c.esIsapre ? "Isapre" : "Fonasa", detSalud,
+      r.dSalud > 0.5 ? "− " + clp(r.dSalud) : clp(0)));
+
+    L.appendChild(fila("", "var(--c-afc)", "Seguro de cesantía",
+      r.c.esIndefinido ? (r.dAfc > 0.5 ? "0,6% del bono" : "Ya estaba sobre el tope de cesantía")
+                       : "Plazo fijo: no lo paga el trabajador",
+      r.dAfc > 0.5 ? "− " + clp(r.dAfc) : clp(0)));
+
+    L.appendChild(fila("", "var(--c-imp)", "Impuesto Único",
+      r.dImpuesto > 0.5
+        ? "El bono sube la base tributable del mes"
+        : "El bono no genera impuesto en este caso",
+      r.dImpuesto > 0.5 ? "− " + clp(r.dImpuesto) : clp(0)));
+
+    L.appendChild(fila("tot", "var(--c-liquido)", "Llega al bolsillo", null, clp(r.neto)));
+  }
+
+  function pintarComparativa(r){
+    var c = $("comp");
+    c.textContent = "";
+    [
+      ["Sin bono", clp(r.sin.liquido), false],
+      ["Con bono", clp(r.con.liquido), true],
+      ["Diferencia", "+ " + clp(r.neto), false]
+    ].forEach(function(x){
+      var d = document.createElement("div");
+      if(x[2]) d.className = "dest";
+      var dt = document.createElement("dt"); dt.textContent = x[0];
+      var dd = document.createElement("dd"); dd.textContent = x[1];
+      d.appendChild(dt); d.appendChild(dd);
+      c.appendChild(d);
+    });
+  }
+
+  function render(){
+    var r = calcular();
+    var liq = esModoLiquido();
+
+    $("bono-lab").textContent  = liq ? "Bono líquido que quiero que reciba" : "Bono bruto que voy a pagar";
+    $("bono-hint").textContent = liq
+      ? "Lo que quieres que le llegue de más en el líquido del mes."
+      : "El monto que se agrega como haber imponible en la liquidación.";
+
+    $("res-lab").textContent = liq ? "Bono bruto necesario" : "Llega al bolsillo";
+    $("res-n").textContent   = clp(liq ? r.bruto : r.neto);
+
+    $("res-sub").textContent = "";
+    var sub = document.createElement("span");
+    sub.appendChild(document.createTextNode(liq
+      ? "Para que le lleguen " + clp(r.neto) + ", hay que pagar un bono bruto de "
+      : "De un bono bruto de " + clp(r.bruto) + ", se descuentan "));
+    var b = document.createElement("b");
+    b.textContent = liq ? clp(r.bruto) : clp(r.bruto - r.neto);
+    sub.appendChild(b);
+    sub.appendChild(document.createTextNode("."));
+    $("res-sub").appendChild(sub);
+
+    pintarBarra(r);
+    pintarDesglose(r);
+    pintarComparativa(r);
+
+    var pctNeto = r.bruto > 0 ? r.neto / r.bruto * 100 : 0;
+    $("mg-cifra").textContent = f1.format(pctNeto) + "%";
+    $("mg-txt").textContent = r.bruto > 0
+      ? "De cada $100 de bono bruto, llegan $" + f1.format(pctNeto) + " al bolsillo. " +
+        "Los otros $" + f1.format(100 - pctNeto) + " se van en cotizaciones e impuesto."
+      : "Ingresa un monto para ver cuánto del bono llega al bolsillo.";
+
+    var aviso = $("aviso");
+    if(liq && r.neto !== r.objetivo && r.objetivo > 0){
+      aviso.hidden = false;
+      aviso.textContent = "Con pesos enteros no hay un bono bruto que deje exactamente " +
+        clp(r.objetivo) + ". El más bajo que alcanza la meta deja " + clp(r.neto) + ".";
+    } else if(r.sobreTope && r.bruto > 0){
+      aviso.hidden = false;
+      aviso.textContent = "El sueldo ya supera el tope imponible de " + clp(r.c.topeAfp) +
+        ", así que el bono no paga más AFP ni salud: solo impuesto.";
+    } else {
+      aviso.hidden = true;
+      aviso.textContent = "";
+    }
+
+    $("foot").textContent = "El bono se trata como haber imponible del mes, que es el caso " +
+      "habitual de bonos de producción, metas o asignaciones pactadas. La gratificación legal " +
+      "se calcula sobre el sueldo base. No se consideran haberes no imponibles, APV ni " +
+      "descuentos pactados. El costo para el empleador es mayor que el bono bruto, porque " +
+      "sobre él también paga sus propias cotizaciones.";
+  }
+
+  /* ---------- carga y eventos ---------- */
+  function llenarAfps(){
+    var prev = elAfp.value;
+    elAfp.textContent = "";
+    IND.afps.forEach(function(a){
+      var o = document.createElement("option");
+      o.value = a.id;
+      o.textContent = a.nombre + " — " + fDec.format(a.tasa) + "%";
+      elAfp.appendChild(o);
+    });
+    elAfp.value = prev && IND.afps.some(function(a){return a.id===prev;}) ? prev : "modelo";
+  }
+
+  [elBase, elBono].forEach(function(el){
+    el.addEventListener("input", function(){
+      var pos = el.value.length - el.selectionStart;
+      var n = leerMonto(el);
+      el.value = n ? fNum.format(n) : "";
+      try{ var np = Math.max(0, el.value.length - pos); el.setSelectionRange(np,np); }catch(e){}
+      render();
+    });
+    el.addEventListener("blur", function(){ if(!el.value) el.value = "0"; render(); });
+  });
+  [elAfp, elPlan, elGrat].forEach(function(el){
+    el.addEventListener("input", render);
+    el.addEventListener("change", render);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="salud"]'), function(el){
+    el.addEventListener("change", function(){ elWrapPlan.hidden = !$("f-salud-isapre").checked; render(); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="contrato"]'), function(el){
+    el.addEventListener("change", render);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="modo"]'), function(el){
+    el.addEventListener("change", function(){
+      // Al cambiar de modo se conserva el resultado: lo calculado pasa a ser la entrada.
+      var previo = calcular();
+      elBono.value = fNum.format(esModoLiquido() ? previo.neto : previo.bruto);
+      render();
+    });
+  });
+
+  llenarAfps();
+  render();
+
+  /* ---------- indicadores al día ---------- */
+  function normalizar(d){
+    if(!d || typeof d !== "object") return null;
+    var n = {
+      periodo: typeof d.periodo === "string" ? d.periodo : RESPALDO.periodo,
+      fuente:  typeof d.fuente  === "string" ? d.fuente  : RESPALDO.fuente,
+      uf:+d.uf, utm:+d.utm, imm:+d.imm,
+      topeAfpUF:+d.topeAfpUF, topeAfcUF:+d.topeAfcUF,
+      tasaAfcIndefinido: isFinite(+d.tasaAfcIndefinido) ? +d.tasaAfcIndefinido : RESPALDO.tasaAfcIndefinido,
+      tasaSaludLegal: isFinite(+d.tasaSaludLegal) ? +d.tasaSaludLegal : RESPALDO.tasaSaludLegal,
+      afps: Array.isArray(d.afps) ? d.afps.filter(function(a){
+              return a && typeof a.id==="string" && typeof a.nombre==="string" && isFinite(+a.tasa);
+            }).map(function(a){ return {id:a.id, nombre:a.nombre, tasa:+a.tasa}; }) : [],
+      tramos: Array.isArray(d.tramos) && d.tramos.length ? d.tramos.map(function(t){
+              return {hasta: t.hasta===null?null:+t.hasta, factor:+t.factor, rebaja:+t.rebaja};
+            }) : RESPALDO.tramos
+    };
+    if(!(n.uf>0 && n.utm>0 && n.imm>0 && n.topeAfpUF>0 && n.topeAfcUF>0)) return null;
+    if(!n.afps.length) n.afps = RESPALDO.afps;
+    return n;
+  }
+
+  (function(){
+    var rutas = ["../indicadores.json", "./indicadores.json"];
+    function intentar(i){
+      if(i >= rutas.length) return;   // se queda con los valores de respaldo
+      try{
+        fetch(rutas[i], {cache:"no-cache"})
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(function(d){
+            var limpio = normalizar(d);
+            if(limpio){
+              IND = limpio;
+              $("periodo").textContent = IND.fuente + " · " + IND.periodo;
+              llenarAfps();
+              render();
+            } else intentar(i+1);
+          })
+          ["catch"](function(){ intentar(i+1); });
+      }catch(e){ intentar(i+1); }
+    }
+    intentar(0);
+  })();
+
+})();
+</script>
+
+</body>
+</html>
