@@ -45,7 +45,7 @@ descripcion_de() {
     sueldo-liquido.html) echo "Calcula tu sueldo líquido en Chile desde el bruto: AFP, salud, seguro de cesantía e Impuesto Único, con los indicadores oficiales de Previred." ;;
     boleta-honorarios.html) echo "Convierte entre monto líquido y monto bruto de una boleta de honorarios en Chile, con la retención vigente del SII." ;;
     bono-liquido.html)   echo "Calcula el bono bruto necesario para que llegue un monto líquido exacto, considerando cotizaciones, topes imponibles e Impuesto Único." ;;
-    finiquito.html)      echo "Calcula el finiquito en Chile: indemnización por años de servicio, mes de aviso, feriado proporcional y días del mes, según el Código del Trabajo." ;;
+    finiquito.html)      echo "Calcula el finiquito en Chile: indemnización por años de servicio, mes de aviso, vacaciones pendientes y días del mes, según el Código del Trabajo." ;;
     *)                   echo "Calculadoras laborales y previsionales para Chile." ;;
   esac
 }

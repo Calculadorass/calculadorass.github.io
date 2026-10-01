@@ -143,6 +143,7 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
 
 .datos{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 .datos div{background:var(--surface);padding:11px 13px}
+.datos div:last-child{grid-column:auto/-1}
 .datos dt{margin:0;font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
 .datos dd{margin:3px 0 0;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
 .datos dd small{display:block;font-size:11px;font-weight:500;color:var(--ink-3);margin-top:1px;letter-spacing:0}
@@ -162,7 +163,7 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
   <div class="masthead">
     <div class="brand">
       <h1>Finiquito</h1>
-      <p>Indemnizaciones, feriado proporcional y días del mes, según el Código del Trabajo y los criterios de la Dirección del Trabajo.</p>
+      <p>Indemnizaciones, vacaciones pendientes y días del mes, según el Código del Trabajo y los criterios de la Dirección del Trabajo.</p>
     </div>
     <div class="stamp"><span class="dot"></span><span id="periodo">Previred · Septiembre 2026</span></div>
   </div>
@@ -245,18 +246,26 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
         </div>
 
         <div class="campo ancho">
-          <label class="chk" for="f-progresivo">
-            <input type="checkbox" id="f-progresivo">
-            <span class="box"></span>
-            <span class="txt">Tiene feriado progresivo
-              <em>Art. 68: con 10 años trabajados, un día extra por cada 3 años nuevos</em>
-            </span>
-          </label>
-        </div>
-        <div class="campo ancho" id="wrap-progresivo" hidden>
-          <label class="lab" for="f-anios-rec">Años totales reconocidos</label>
-          <input class="input num" id="f-anios-rec" type="number" min="10" max="60" step="1" value="13">
-          <p class="hint" id="progresivo-hint">Incluye empleadores anteriores, hasta un máximo de 10 años acreditables.</p>
+          <p class="seccion" style="margin-bottom:9px">Vacaciones</p>
+          <div class="rejilla">
+            <div class="campo">
+              <label class="lab" for="f-progresivos">Días progresivos</label>
+              <input class="input num" id="f-progresivos" type="number" min="0" max="20" step="1" value="0">
+              <p class="hint">Art. 68. Cero si no tiene.</p>
+            </div>
+            <div class="campo">
+              <label class="lab" for="d-tomados">Días que vas a informar</label>
+              <div class="seg">
+                <label><input type="radio" name="modoDias" id="d-tomados" value="tomados" checked><span>Tomados</span></label>
+                <label><input type="radio" name="modoDias" id="d-pendientes" value="pendientes"><span>Pendientes</span></label>
+              </div>
+            </div>
+            <div class="campo ancho">
+              <label class="lab" for="f-dias-vac" id="dias-vac-lab">Días hábiles ya tomados</label>
+              <input class="input num" id="f-dias-vac" type="text" inputmode="decimal" value="0" autocomplete="off">
+              <p class="hint" id="dias-vac-hint"></p>
+            </div>
+          </div>
         </div>
 
         <div class="campo ancho">
@@ -361,11 +370,18 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
   var fNum = new Intl.NumberFormat("es-CL",{maximumFractionDigits:0});
   var f2   = new Intl.NumberFormat("es-CL",{maximumFractionDigits:2});
   var f1   = new Intl.NumberFormat("es-CL",{maximumFractionDigits:1});
+  var f4   = new Intl.NumberFormat("es-CL",{maximumFractionDigits:4});
   function clp(n){ return fCLP.format(Math.round(n||0)); }
   var $ = function(id){ return document.getElementById(id); };
 
   function leerMonto(el){ var v=String(el.value||"").replace(/[^\d]/g,""); return v?parseInt(v,10):0; }
   function entero(el, def){ var n=parseInt(el.value,10); return isFinite(n)&&n>0?n:def; }
+  /* Acepta "12,5" y "12.5"; los puntos de miles se descartan. */
+  function leerDecimal(el){
+    var v = String(el.value||"").replace(/\./g,"").replace(",",".").replace(/[^\d.]/g,"");
+    var n = parseFloat(v);
+    return isFinite(n) && n > 0 ? n : 0;
+  }
 
   /* ---------- fechas (todo en UTC para evitar corrimientos de zona) ---------- */
   function fecha(s){
@@ -437,21 +453,17 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
       valorDiaDirecto: jornada === "diario" ? leerMonto($("f-valordia")) : 0,
       voluntaria: leerMonto($("f-voluntaria")),
       descuentos: leerMonto($("f-descuentos")),
-      progresivo: $("f-progresivo").checked,
-      aniosReconocidos: entero($("f-anios-rec"), 13)
+      progresivos: Math.max(0, parseInt($("f-progresivos").value, 10) || 0),
+      modoDias: $("d-pendientes").checked ? "pendientes" : "tomados",
+      diasInformados: leerDecimal($("f-dias-vac"))
     };
   }
 
-  /* Días de feriado por año (Art. 68). La base son 15 días hábiles; con 10 años
-     trabajados se suma un día por cada 3 años nuevos. */
+  /* Días de feriado por año: los 15 días hábiles del Art. 67 más los días
+     progresivos del Art. 68 que el usuario informa. */
   function diasFeriadoAnuales(x){
     var base = (IND.feriado && IND.feriado.diasBase) || 15;
-    if(!x.progresivo) return {total:base, comunes:base, progresivos:0};
-    var umbral = (IND.feriado && IND.feriado.aniosParaProgresivo) || 10;
-    var cada   = (IND.feriado && IND.feriado.aniosPorDiaExtra) || 3;
-    var extra  = x.aniosReconocidos >= umbral
-      ? Math.floor((x.aniosReconocidos - umbral) / cada) : 0;
-    return {total: base + extra, comunes: base, progresivos: extra};
+    return {total: base + x.progresivos, comunes: base, progresivos: x.progresivos};
   }
 
   function calcular(){
@@ -495,7 +507,23 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     var desdeAniv = diferencia(aniversario, x.fin);
     var dfa = diasFeriadoAnuales(x);
     var porMes = dfa.total / 12;    // 1,25 con los 15 días comunes
-    var diasHabilesFeriado = desdeAniv.meses * porMes + desdeAniv.dias * (porMes/30);
+
+    // Vacaciones acumuladas desde el ingreso: un feriado completo por cada
+    // período anual cumplido, más la proporción del período en curso.
+    var diasPeriodos    = ant.anios * dfa.total;
+    var diasProporcional = desdeAniv.meses * porMes + desdeAniv.dias * (porMes/30);
+    var diasAcumulados   = diasPeriodos + diasProporcional;
+
+    var diasTomados, diasHabilesFeriado;
+    if(x.modoDias === "pendientes"){
+      diasHabilesFeriado = Math.max(0, x.diasInformados);
+      diasTomados = Math.max(0, diasAcumulados - diasHabilesFeriado);
+    } else {
+      diasTomados = Math.max(0, x.diasInformados);
+      diasHabilesFeriado = Math.max(0, diasAcumulados - diasTomados);
+    }
+    var tomadosExceden = x.modoDias === "tomados" && x.diasInformados > diasAcumulados + 0.001;
+    var pendientesExceden = x.modoDias === "pendientes" && x.diasInformados > diasAcumulados + 0.001;
 
     var enteros = Math.floor(diasHabilesFeriado);
     var fraccion = diasHabilesFeriado - enteros;
@@ -528,6 +556,9 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
       diasTrabajados:diasTrabajados, totalBruto:totalBruto,
       descuentos:descuentos, descuentoPedido:x.descuentos, total:total,
       valorDia:valorDia, diasHabilesFeriado:diasHabilesFeriado,
+      diasPeriodos:diasPeriodos, diasProporcional:diasProporcional,
+      diasAcumulados:diasAcumulados, diasTomados:diasTomados,
+      tomadosExceden:tomadosExceden, pendientesExceden:pendientesExceden,
       diasPagados:diasPagados, inhabiles:inhabiles, enteros:enteros,
       diasMes:diasMes, feriadosConocidos:feriadosConocidos
     };
@@ -606,11 +637,9 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
         "Pactada por sobre la legal", clp(r.voluntaria), "Revisar"));
     }
 
-    L.appendChild(fila("", "var(--c-feriado)", "Feriado proporcional",
-      (r.dfa.progresivos
-        ? r.dfa.total + " días al año (" + r.dfa.comunes + " comunes + " + r.dfa.progresivos + " progresivos) · "
-        : r.dfa.total + " días al año · ") +
-      f2.format(r.diasHabilesFeriado) + " días hábiles + " + r.inhabiles + " inhábiles = " +
+    L.appendChild(fila("", "var(--c-feriado)", "Feriado pendiente",
+      f2.format(r.diasAcumulados) + " acumulados − " + f2.format(r.diasTomados) + " tomados = " +
+      f2.format(r.diasHabilesFeriado) + " días hábiles · + " + r.inhabiles + " inhábiles = " +
       f2.format(r.diasPagados) + " días × " + clp(r.valorDia),
       clp(r.feriado), "Tributa"));
 
@@ -637,7 +666,11 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
       ["Valor del día", clp(r.valorDia), r.x.jornada === "parcial" ? "criterio DT parcial" : "mensual ÷ 30"],
       ["Años indemnizables", String(r.aniosIndem), r.topeAniosAplicado ? "tope de 11" : ""],
       ["Feriado por año", r.dfa.total + " días",
-        r.dfa.progresivos ? r.dfa.comunes + " + " + r.dfa.progresivos + " progresivos" : "sin progresivo"]
+        r.dfa.progresivos ? r.dfa.comunes + " + " + r.dfa.progresivos + " progresivos" : "sin progresivo"],
+      ["Vacaciones acumuladas", f2.format(r.diasAcumulados) + " días",
+        r.ant.anios + " períodos + proporción"],
+      ["Días pendientes", f2.format(r.diasHabilesFeriado) + " días",
+        f2.format(r.diasTomados) + " ya tomados"]
     ];
     items.forEach(function(it){
       var d = document.createElement("div");
@@ -689,6 +722,9 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     L.push(linea("Años indemnizables", String(r.aniosIndem) + (r.topeAniosAplicado ? "  [tope de 11]" : "")));
     L.push(linea("Feriado por año", r.dfa.total + " días" +
       (r.dfa.progresivos ? "  (" + r.dfa.comunes + " comunes + " + r.dfa.progresivos + " progresivos)" : "")));
+    L.push(linea("Vacaciones acumuladas", f2.format(r.diasAcumulados) + " días hábiles"));
+    L.push(linea("Días ya tomados", f2.format(r.diasTomados) + " días hábiles"));
+    L.push(linea("Días pendientes", f2.format(r.diasHabilesFeriado) + " días hábiles"));
     L.push("");
     L.push("DETALLE");
     L.push("-".repeat(56));
@@ -697,7 +733,7 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     if(r.ias) L.push("   " + r.aniosIndem + (r.aniosIndem === 1 ? " año × " : " años × ") + clp(r.base));
     L.push(linea("Indemnización sustitutiva del aviso", clp(r.aviso)));
     if(r.voluntaria > 0) L.push(linea("Indemnización voluntaria", clp(r.voluntaria)));
-    L.push(linea("Feriado proporcional", clp(r.feriado)));
+    L.push(linea("Feriado pendiente", clp(r.feriado)));
     L.push("   " + f2.format(r.diasHabilesFeriado) + " días hábiles + " + r.inhabiles +
            " inhábiles = " + f2.format(r.diasPagados) + " días × " + clp(r.valorDia));
     L.push(linea("Días trabajados del mes", clp(r.diasTrabajados)));
@@ -716,6 +752,14 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     L.push("aviso no constituyen renta. El feriado proporcional y los días");
     L.push("trabajados son remuneración y quedan afectos a cotizaciones e");
     L.push("Impuesto Único. Los montos están en bruto.");
+    if(r.tomadosExceden){
+      mensajes.push("Los días tomados superan los " + f2.format(r.diasAcumulados) +
+        " acumulados, así que no queda feriado pendiente por pagar.");
+    }
+    if(r.pendientesExceden){
+      mensajes.push("Los días pendientes informados superan los " + f2.format(r.diasAcumulados) +
+        " que se acumulan entre el ingreso y el término. Se pagan igual, pero conviene revisarlo.");
+    }
     if(r.descuentoPedido > r.descuentos){
       mensajes.push("El descuento de " + clp(r.descuentoPedido) + " supera el finiquito de " +
         clp(r.totalBruto) + ", así que se aplicó solo hasta dejarlo en cero.");
@@ -816,6 +860,14 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     if(r.topeAniosAplicado){
       mensajes.push("La antigüedad supera los 11 años, que es el tope legal de la indemnización.");
     }
+    if(r.tomadosExceden){
+      mensajes.push("Los días tomados superan los " + f2.format(r.diasAcumulados) +
+        " acumulados, así que no queda feriado pendiente por pagar.");
+    }
+    if(r.pendientesExceden){
+      mensajes.push("Los días pendientes informados superan los " + f2.format(r.diasAcumulados) +
+        " que se acumulan entre el ingreso y el término. Se pagan igual, pero conviene revisarlo.");
+    }
     if(r.descuentoPedido > r.descuentos){
       mensajes.push("El descuento de " + clp(r.descuentoPedido) + " supera el finiquito de " +
         clp(r.totalBruto) + ", así que se aplicó solo hasta dejarlo en cero.");
@@ -837,6 +889,14 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
       : (r.x.causal === "159"
           ? "No da derecho a indemnización: solo feriado proporcional y días trabajados."
           : "No da derecho a indemnización. Si el despido se declara injustificado, procede con recargo.");
+
+    var modoP = r.x.modoDias === "pendientes";
+    $("dias-vac-lab").textContent = modoP ? "Días hábiles pendientes" : "Días hábiles ya tomados";
+    $("dias-vac-hint").textContent = modoP
+      ? "Tiene " + f2.format(r.diasAcumulados) + " días acumulados; con " +
+        f2.format(r.diasHabilesFeriado) + " pendientes habría tomado " + f2.format(r.diasTomados) + "."
+      : "De " + f2.format(r.diasAcumulados) + " días acumulados le quedan " +
+        f2.format(r.diasHabilesFeriado) + " pendientes.";
 
     $("jornada-hint").textContent = r.x.jornada === "parcial"
       ? "El feriado se valoriza con el criterio de la DT para jornada parcial."
@@ -862,11 +922,21 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     });
     el.addEventListener("blur", function(){ if(!el.value) el.value = "0"; render(); });
   });
-  $("f-progresivo").addEventListener("change", function(){
-    $("wrap-progresivo").hidden = !$("f-progresivo").checked;
-    render();
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="modoDias"]'), function(el){
+    el.addEventListener("change", function(){
+      // El evento llega con el modo ya cambiado, así que el número del campo
+      // corresponde al modo anterior: se convierte al que toca ahora.
+      var r = calcular();
+      if(!r.error){
+        // Se traspasa con 4 decimales: con 2 el redondeo movía el resultado
+        // unas decenas de pesos al cambiar de modo y volver.
+        var v = $("d-pendientes").checked ? r.diasTomados : r.diasHabilesFeriado;
+        $("f-dias-vac").value = f4.format(v).replace(/\./g, "");
+      }
+      render();
+    });
   });
-  ["f-inicio","f-termino","f-causal","f-aviso","f-diasmes","f-dias-sem","f-anios-rec"].forEach(function(id){
+  ["f-inicio","f-termino","f-causal","f-aviso","f-diasmes","f-dias-sem","f-progresivos","f-dias-vac"].forEach(function(id){
     $(id).addEventListener("input", render);
     $(id).addEventListener("change", render);
   });
