@@ -99,6 +99,15 @@ el calendario. Si le toca un año que no está cargado, lo dice en pantalla y
 cuenta solo sábados y domingos como inhábiles. La tarea mensual agrega el año
 siguiente cuando falta.
 
+## Costo del empleador
+
+La calculadora de sueldo líquido muestra también lo que el trabajador le cuesta
+a la empresa. Las tasas de cargo del empleador viven en `indicadores.json` bajo
+`empleador`: tras la reforma previsional los aportes previsionales suman 3,5%
+(SIS 1,78% + expectativa de vida 0,72% + rentabilidad protegida 0,90% + cuenta
+individual 0,10%), más el seguro de cesantía y la mutual de la Ley 16.744, cuya
+tasa adicional por riesgo se ingresa en la página porque varía por empresa.
+
 ## Redondeo
 
 Los montos se llevan en pesos enteros y cada cotización se redondea al

@@ -10,6 +10,7 @@
   --line:#E1E8E5; --line-strong:#CBD6D2;
   --accent:#00897A; --accent-ink:#00655B; --accent-soft:#E4F2EF; --focus:#00897A;
   --c-ias:#00897A; --c-aviso:#2563C9; --c-feriado:#C2610C; --c-dias:#8F7500;
+  --c-vol:#A82D86;
   --alerta:#A8321F; --alerta-soft:#FBEAE6;
   --shadow:0 1px 2px rgba(18,32,29,.05), 0 8px 24px -12px rgba(18,32,29,.18);
   --r:14px; --r-sm:9px;
@@ -22,6 +23,7 @@
     --line:#23322E; --line-strong:#33453F;
     --accent:#2FB39B; --accent-ink:#57C9B3; --accent-soft:#12302A; --focus:#2FB39B;
     --c-ias:#1E9B85; --c-aviso:#4A80D6; --c-feriado:#C4762A; --c-dias:#9A8226;
+    --c-vol:#C05CA0;
     --alerta:#E8907E; --alerta-soft:#331712;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
   }
@@ -32,7 +34,7 @@
   --ink:#E7EFEC; --ink-2:#9FB0AB; --ink-3:#718380;
   --line:#23322E; --line-strong:#33453F;
   --accent:#2FB39B; --accent-ink:#57C9B3; --accent-soft:#12302A; --focus:#2FB39B;
-  --c-ias:#1E9B85; --c-aviso:#4A80D6; --c-feriado:#C4762A; --c-dias:#9A8226;
+  --c-ias:#1E9B85; --c-aviso:#4A80D6; --c-feriado:#C4762A; --c-dias:#9A8226; --c-vol:#C05CA0;
   --alerta:#E8907E; --alerta-soft:#331712;
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
 }
@@ -243,6 +245,21 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
         </div>
 
         <div class="campo ancho">
+          <label class="chk" for="f-progresivo">
+            <input type="checkbox" id="f-progresivo">
+            <span class="box"></span>
+            <span class="txt">Tiene feriado progresivo
+              <em>Art. 68: con 10 años trabajados, un día extra por cada 3 años nuevos</em>
+            </span>
+          </label>
+        </div>
+        <div class="campo ancho" id="wrap-progresivo" hidden>
+          <label class="lab" for="f-anios-rec">Años totales reconocidos</label>
+          <input class="input num" id="f-anios-rec" type="number" min="10" max="60" step="1" value="13">
+          <p class="hint" id="progresivo-hint">Incluye empleadores anteriores, hasta un máximo de 10 años acreditables.</p>
+        </div>
+
+        <div class="campo ancho">
           <p class="seccion" style="margin-bottom:9px">Parte variable — últimos 3 meses</p>
           <div class="rejilla3">
             <div class="campo">
@@ -266,13 +283,29 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
           </div>
           <p class="hint">Comisiones, tratos, bonos de producción. El Art. 172 manda promediar los últimos tres meses calendario.</p>
         </div>
+
+        <div class="campo ancho">
+          <label class="lab" for="f-voluntaria">Indemnización voluntaria</label>
+          <div class="money"><span class="peso">$</span>
+            <input class="input num" id="f-voluntaria" type="text" inputmode="numeric" value="0" autocomplete="off">
+          </div>
+          <p class="hint">Lo pactado por sobre la indemnización legal. Déjalo en cero si no hay.</p>
+        </div>
+
+        <div class="campo ancho">
+          <label class="lab" for="f-descuentos">Descuentos</label>
+          <div class="money"><span class="peso">$</span>
+            <input class="input num" id="f-descuentos" type="text" inputmode="numeric" value="0" autocomplete="off">
+          </div>
+          <p class="hint">Todo en un solo monto: préstamos, anticipos, el aporte del empleador al seguro de cesantía que se imputa a la indemnización, o cualquier otro descuento pactado.</p>
+        </div>
       </div>
     </div>
   </section>
 
   <section class="card">
     <div class="card-b">
-      <p class="hero-lab">Total finiquito</p>
+      <p class="hero-lab" id="hero-lab">Total finiquito</p>
       <p class="hero-n num" id="res-n">$0</p>
       <p class="hero-sub" id="res-sub"></p>
       <div class="bar" id="bar" role="img" aria-label="Composición del finiquito"></div>
@@ -401,8 +434,24 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
       avisoDado: $("f-aviso").checked,
       fija:fija, variables:variables, promVariable:promVariable,
       diasSemana: entero($("f-dias-sem"), 3),
-      valorDiaDirecto: jornada === "diario" ? leerMonto($("f-valordia")) : 0
+      valorDiaDirecto: jornada === "diario" ? leerMonto($("f-valordia")) : 0,
+      voluntaria: leerMonto($("f-voluntaria")),
+      descuentos: leerMonto($("f-descuentos")),
+      progresivo: $("f-progresivo").checked,
+      aniosReconocidos: entero($("f-anios-rec"), 13)
     };
+  }
+
+  /* Días de feriado por año (Art. 68). La base son 15 días hábiles; con 10 años
+     trabajados se suma un día por cada 3 años nuevos. */
+  function diasFeriadoAnuales(x){
+    var base = (IND.feriado && IND.feriado.diasBase) || 15;
+    if(!x.progresivo) return {total:base, comunes:base, progresivos:0};
+    var umbral = (IND.feriado && IND.feriado.aniosParaProgresivo) || 10;
+    var cada   = (IND.feriado && IND.feriado.aniosPorDiaExtra) || 3;
+    var extra  = x.aniosReconocidos >= umbral
+      ? Math.floor((x.aniosReconocidos - umbral) / cada) : 0;
+    return {total: base + extra, comunes: base, progresivos: extra};
   }
 
   function calcular(){
@@ -444,7 +493,9 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     // sumando los sábados, domingos y festivos comprendidos.
     var aniversario = new Date(Date.UTC(x.ini.getUTCFullYear() + ant.anios, x.ini.getUTCMonth(), x.ini.getUTCDate()));
     var desdeAniv = diferencia(aniversario, x.fin);
-    var diasHabilesFeriado = desdeAniv.meses * 1.25 + desdeAniv.dias * (1.25/30);
+    var dfa = diasFeriadoAnuales(x);
+    var porMes = dfa.total / 12;    // 1,25 con los 15 días comunes
+    var diasHabilesFeriado = desdeAniv.meses * porMes + desdeAniv.dias * (porMes/30);
 
     var enteros = Math.floor(diasHabilesFeriado);
     var fraccion = diasHabilesFeriado - enteros;
@@ -464,13 +515,18 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     var diasMes = x.fin.getUTCDate();
     var diasTrabajados = Math.round(valorDia * diasMes);
 
-    var total = ias + aviso + feriado + diasTrabajados;
+    var voluntaria = x.voluntaria;
+    var totalBruto = ias + aviso + voluntaria + feriado + diasTrabajados;
+    var descuentos = Math.min(x.descuentos, totalBruto);   // no puede dejar el finiquito en negativo
+    var total = totalBruto - descuentos;
 
     return {
       x:x, base:base, baseSinTope:baseSinTope, topePesos:topePesos, topeAplicado:topeAplicado,
       ant:ant, aniosIndem:aniosIndem, topeAniosAplicado:topeAniosAplicado,
-      daIndemnizacion:daIndemnizacion, fraccionCuenta:fraccionCuenta,
-      ias:ias, aviso:aviso, feriado:feriado, diasTrabajados:diasTrabajados, total:total,
+      daIndemnizacion:daIndemnizacion, fraccionCuenta:fraccionCuenta, dfa:dfa,
+      ias:ias, aviso:aviso, voluntaria:voluntaria, feriado:feriado,
+      diasTrabajados:diasTrabajados, totalBruto:totalBruto,
+      descuentos:descuentos, descuentoPedido:x.descuentos, total:total,
       valorDia:valorDia, diasHabilesFeriado:diasHabilesFeriado,
       diasPagados:diasPagados, inhabiles:inhabiles, enteros:enteros,
       diasMes:diasMes, feriadosConocidos:feriadosConocidos
@@ -481,6 +537,7 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
   var SERIES = [
     {k:"ias",            n:"Años de servicio", c:"var(--c-ias)"},
     {k:"aviso",          n:"Mes de aviso",     c:"var(--c-aviso)"},
+    {k:"voluntaria",     n:"Voluntaria",       c:"var(--c-vol)"},
     {k:"feriado",        n:"Feriado",          c:"var(--c-feriado)"},
     {k:"diasTrabajados", n:"Días del mes",     c:"var(--c-dias)"}
   ];
@@ -488,7 +545,7 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
   function pintarBarra(r){
     var bar = $("bar"), keys = $("keys");
     bar.textContent = ""; keys.textContent = "";
-    var total = r.total || 1;
+    var total = r.totalBruto || 1;
     SERIES.forEach(function(s){
       var v = r[s.k], p = v/total*100;
       if(v > 0){
@@ -544,7 +601,15 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     L.appendChild(fila(r.aviso ? "" : "nula", "var(--c-aviso)", "Indemnización sustitutiva del aviso previo",
       detAviso, clp(r.aviso), r.aviso ? "No tributa" : null));
 
+    if(r.voluntaria > 0){
+      L.appendChild(fila("", "var(--c-vol)", "Indemnización voluntaria",
+        "Pactada por sobre la legal", clp(r.voluntaria), "Revisar"));
+    }
+
     L.appendChild(fila("", "var(--c-feriado)", "Feriado proporcional",
+      (r.dfa.progresivos
+        ? r.dfa.total + " días al año (" + r.dfa.comunes + " comunes + " + r.dfa.progresivos + " progresivos) · "
+        : r.dfa.total + " días al año · ") +
       f2.format(r.diasHabilesFeriado) + " días hábiles + " + r.inhabiles + " inhábiles = " +
       f2.format(r.diasPagados) + " días × " + clp(r.valorDia),
       clp(r.feriado), "Tributa"));
@@ -552,7 +617,15 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     L.appendChild(fila("", "var(--c-dias)", "Días trabajados del mes",
       r.diasMes + " días × " + clp(r.valorDia), clp(r.diasTrabajados), "Tributa"));
 
-    L.appendChild(fila("tot", null, "Total finiquito", null, clp(r.total)));
+    if(r.descuentos > 0){
+      L.appendChild(fila("sum", null, "Total finiquito", null, clp(r.totalBruto)));
+      L.appendChild(fila("", null, "Descuentos",
+        "Préstamos, anticipos, aporte del empleador al seguro de cesantía u otros",
+        "− " + clp(r.descuentos)));
+      L.appendChild(fila("tot", null, "Total a pagar", null, clp(r.total)));
+    } else {
+      L.appendChild(fila("tot", null, "Total finiquito", null, clp(r.total)));
+    }
   }
 
   function pintarDatos(r){
@@ -562,7 +635,9 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
       ["Base de cálculo", clp(r.base), r.topeAplicado ? "topada en 90 UF" : "Art. 172"],
       ["Promedio variable", clp(r.x.promVariable), "últimos 3 meses"],
       ["Valor del día", clp(r.valorDia), r.x.jornada === "parcial" ? "criterio DT parcial" : "mensual ÷ 30"],
-      ["Años indemnizables", String(r.aniosIndem), r.topeAniosAplicado ? "tope de 11" : ""]
+      ["Años indemnizables", String(r.aniosIndem), r.topeAniosAplicado ? "tope de 11" : ""],
+      ["Feriado por año", r.dfa.total + " días",
+        r.dfa.progresivos ? r.dfa.comunes + " + " + r.dfa.progresivos + " progresivos" : "sin progresivo"]
     ];
     items.forEach(function(it){
       var d = document.createElement("div");
@@ -612,6 +687,8 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     L.push(linea("Base de cálculo (Art. 172)", clp(r.base) + (r.topeAplicado ? "  [topada en 90 UF]" : "")));
     L.push(linea("Valor del día", clp(r.valorDia)));
     L.push(linea("Años indemnizables", String(r.aniosIndem) + (r.topeAniosAplicado ? "  [tope de 11]" : "")));
+    L.push(linea("Feriado por año", r.dfa.total + " días" +
+      (r.dfa.progresivos ? "  (" + r.dfa.comunes + " comunes + " + r.dfa.progresivos + " progresivos)" : "")));
     L.push("");
     L.push("DETALLE");
     L.push("-".repeat(56));
@@ -619,18 +696,30 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     L.push(linea("Indemnización por años de servicio", clp(r.ias)));
     if(r.ias) L.push("   " + r.aniosIndem + (r.aniosIndem === 1 ? " año × " : " años × ") + clp(r.base));
     L.push(linea("Indemnización sustitutiva del aviso", clp(r.aviso)));
+    if(r.voluntaria > 0) L.push(linea("Indemnización voluntaria", clp(r.voluntaria)));
     L.push(linea("Feriado proporcional", clp(r.feriado)));
     L.push("   " + f2.format(r.diasHabilesFeriado) + " días hábiles + " + r.inhabiles +
            " inhábiles = " + f2.format(r.diasPagados) + " días × " + clp(r.valorDia));
     L.push(linea("Días trabajados del mes", clp(r.diasTrabajados)));
     L.push("   " + r.diasMes + " días × " + clp(r.valorDia));
     L.push("-".repeat(56));
-    L.push(linea("TOTAL FINIQUITO", clp(r.total)));
+    if(r.descuentos > 0){
+      L.push(linea("Total finiquito", clp(r.totalBruto)));
+      L.push(linea("Descuentos", "− " + clp(r.descuentos)));
+      L.push("-".repeat(56));
+      L.push(linea("TOTAL A PAGAR", clp(r.total)));
+    } else {
+      L.push(linea("TOTAL FINIQUITO", clp(r.total)));
+    }
     L.push("");
     L.push("Las indemnizaciones legales por años de servicio y por falta de");
     L.push("aviso no constituyen renta. El feriado proporcional y los días");
     L.push("trabajados son remuneración y quedan afectos a cotizaciones e");
     L.push("Impuesto Único. Los montos están en bruto.");
+    if(r.descuentoPedido > r.descuentos){
+      mensajes.push("El descuento de " + clp(r.descuentoPedido) + " supera el finiquito de " +
+        clp(r.totalBruto) + ", así que se aplicó solo hasta dejarlo en cero.");
+    }
     if(!r.feriadosConocidos){
       L.push("");
       L.push("Aviso: no había feriados cargados para ese año, así que el");
@@ -696,13 +785,21 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     $("btn-copiar").disabled = false;
     $("copia-texto").hidden = true;   // los montos cambiaron: se oculta el respaldo anterior
 
+    $("hero-lab").textContent = r.descuentos > 0 ? "Total a pagar" : "Total finiquito";
     $("res-n").textContent = clp(r.total);
     $("res-sub").textContent = "";
     var sub = document.createElement("span");
-    sub.appendChild(document.createTextNode("Por " + r.ant.anios + " años y " + r.ant.meses +
-      " meses de servicio, con una base de cálculo de "));
-    var b = document.createElement("b"); b.textContent = clp(r.base);
-    sub.appendChild(b); sub.appendChild(document.createTextNode("."));
+    if(r.descuentos > 0){
+      sub.appendChild(document.createTextNode("Finiquito de " + clp(r.totalBruto) + " menos "));
+      var bd = document.createElement("b"); bd.textContent = clp(r.descuentos);
+      sub.appendChild(bd);
+      sub.appendChild(document.createTextNode(" en descuentos. Base de cálculo " + clp(r.base) + "."));
+    } else {
+      sub.appendChild(document.createTextNode("Por " + r.ant.anios + " años y " + r.ant.meses +
+        " meses de servicio, con una base de cálculo de "));
+      var b = document.createElement("b"); b.textContent = clp(r.base);
+      sub.appendChild(b); sub.appendChild(document.createTextNode("."));
+    }
     $("res-sub").appendChild(sub);
 
     pintarBarra(r);
@@ -718,6 +815,10 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     }
     if(r.topeAniosAplicado){
       mensajes.push("La antigüedad supera los 11 años, que es el tope legal de la indemnización.");
+    }
+    if(r.descuentoPedido > r.descuentos){
+      mensajes.push("El descuento de " + clp(r.descuentoPedido) + " supera el finiquito de " +
+        clp(r.totalBruto) + ", así que se aplicó solo hasta dejarlo en cero.");
     }
     if(!r.feriadosConocidos){
       mensajes.push("No hay feriados cargados para ese año, así que el feriado proporcional se proyectó " +
@@ -750,7 +851,7 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
   }
 
   /* ---------- eventos ---------- */
-  ["f-fija","v1","v2","v3","f-valordia"].forEach(function(id){
+  ["f-fija","v1","v2","v3","f-valordia","f-voluntaria","f-descuentos"].forEach(function(id){
     var el = $(id);
     el.addEventListener("input", function(){
       var pos = el.value.length - el.selectionStart;
@@ -761,7 +862,11 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     });
     el.addEventListener("blur", function(){ if(!el.value) el.value = "0"; render(); });
   });
-  ["f-inicio","f-termino","f-causal","f-aviso","f-diasmes","f-dias-sem"].forEach(function(id){
+  $("f-progresivo").addEventListener("change", function(){
+    $("wrap-progresivo").hidden = !$("f-progresivo").checked;
+    render();
+  });
+  ["f-inicio","f-termino","f-causal","f-aviso","f-diasmes","f-dias-sem","f-anios-rec"].forEach(function(id){
     $(id).addEventListener("input", render);
     $(id).addEventListener("change", render);
   });

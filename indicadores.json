@@ -156,5 +156,20 @@
         "2026-12-25"
       ]
     }
+  },
+  "empleador": {
+    "origen": "Indicadores Previsionales Previred",
+    "sis": 0.0178,
+    "expectativaVida": 0.0072,
+    "rentabilidadProtegida": 0.009,
+    "cuentaIndividual": 0.001,
+    "afcIndefinido": 0.024,
+    "afcPlazoFijo": 0.03,
+    "mutualBasica": 0.009
+  },
+  "feriado": {
+    "diasBase": 15,
+    "aniosParaProgresivo": 10,
+    "aniosPorDiaExtra": 3
   }
 }

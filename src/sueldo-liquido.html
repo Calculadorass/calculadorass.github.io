@@ -152,9 +152,10 @@ body{
 @media (max-width:899px){ #panel-hero{order:-1} }
 @media (min-width:900px){
   .grid{grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);align-items:start}
-  #panel-form{grid-column:1;grid-row:1/span 2}
+  #panel-form{grid-column:1;grid-row:1/span 3}
   #panel-hero{grid-column:2;grid-row:1}
-  #panel-detalle{grid-column:2;grid-row:2}
+  #panel-empleador{grid-column:2;grid-row:2}
+  #panel-detalle{grid-column:2;grid-row:3}
 }
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
 .card-h{padding:15px 18px 0}
@@ -290,10 +291,15 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
       <div class="card-b">
 
         <div class="field">
-          <label class="lab" for="f-base">Sueldo base mensual</label>
+          <div class="seg" style="margin-bottom:13px">
+            <label><input type="radio" name="modo" id="m-directo" value="directo" checked><span>Sé el bruto</span></label>
+            <label><input type="radio" name="modo" id="m-inverso" value="inverso"><span>Quiero este líquido</span></label>
+          </div>
+          <label class="lab" for="f-base" id="base-lab">Sueldo base mensual</label>
           <div class="money"><span class="peso">$</span>
             <input class="input num" id="f-base" type="text" inputmode="numeric" value="1.200.000" autocomplete="off">
           </div>
+          <p class="hint" id="base-hint" hidden></p>
         </div>
 
         <div class="field">
@@ -365,6 +371,12 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
         </div>
 
         <div class="field">
+          <label class="lab" for="f-mutual">Tasa mutual (%)</label>
+          <input class="input num" id="f-mutual" type="text" inputmode="decimal" value="0,90" autocomplete="off">
+          <p class="hint">Ley 16.744: 0,90% básica más la tasa adicional por riesgo, que varía según la actividad de la empresa.</p>
+        </div>
+
+        <div class="field">
           <label class="lab" for="f-cargas">Cargas familiares</label>
           <input class="input num" id="f-cargas" type="number" min="0" max="20" step="1" value="0" autocomplete="off">
           <p class="hint" id="cargas-hint">El monto depende del tramo de renta.</p>
@@ -382,6 +394,17 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
 
         <div class="bar" id="bar" role="img" aria-label="Distribución del total de haberes"></div>
         <div class="keys" id="keys"></div>
+      </div>
+    </section>
+
+    <!-- ============ COSTO EMPLEADOR ============ -->
+    <section class="card" id="panel-empleador">
+      <div class="card-h"><h2>Costo para el empleador</h2></div>
+      <div class="card-b">
+        <p class="hero-lab">Costo total mensual</p>
+        <p class="hero-n num" id="out-costo" style="font-size:clamp(27px,6vw,38px)">$0</p>
+        <p class="hero-sub" id="out-costo-sub"></p>
+        <div class="lines" id="lines-emp" style="margin-top:14px"></div>
       </div>
     </section>
 
@@ -416,6 +439,10 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     topeAfcUF: 135.2,
     tasaAfcIndefinido: 0.006,
     tasaSaludLegal: 0.07,
+    empleador: {
+      sis:0.0178, expectativaVida:0.0072, rentabilidadProtegida:0.0090,
+      cuentaIndividual:0.0010, afcIndefinido:0.024, afcPlazoFijo:0.030, mutualBasica:0.0090
+    },
     afps: [
       {id:"uno",       nombre:"AFP Uno",       tasa:10.46},
       {id:"modelo",    nombre:"AFP Modelo",    tasa:10.58},
@@ -498,8 +525,9 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     return IND.asignacion[IND.asignacion.length-1];
   }
 
-  function calcular(){
-    var base = leerMonto(elBase);
+  /* Liquidación para un sueldo base dado. Separarla del DOM permite usarla
+     también en el modo inverso, buscando el base que deja el líquido pedido. */
+  function liquidar(base){
     var otros = leerMonto(elOtros);
 
     var topeGrat = 4.75 * IND.imm / 12;
@@ -541,7 +569,21 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     var totalDescuentos = afp + saludTotal + afc + imp.monto;
     var liquido = totalHaberes - totalDescuentos;
 
+    // Aportes de cargo del empleador. Los previsionales van sobre la renta
+    // imponible topada en 90 UF; la cesantía tiene su propio tope de 135,2 UF.
+    var E = IND.empleador;
+    var eSis    = Math.round(baseAfp * E.sis);
+    var eExpect = Math.round(baseAfp * E.expectativaVida);
+    var eRent   = Math.round(baseAfp * E.rentabilidadProtegida);
+    var eCuenta = Math.round(baseAfp * E.cuentaIndividual);
+    var eAfc    = Math.round(baseAfc * (esIndefinido ? E.afcIndefinido : E.afcPlazoFijo));
+    var eMutual = Math.round(baseAfp * tasaMutual());
+    var eTotal  = eSis + eExpect + eRent + eCuenta + eAfc + eMutual;
+    var costoEmpleador = imponible + noImponibles + eTotal;
+
     return {
+      eSis:eSis, eExpect:eExpect, eRent:eRent, eCuenta:eCuenta, eAfc:eAfc,
+      eMutual:eMutual, eTotal:eTotal, costoEmpleador:costoEmpleador,
       base:base, otros:otros, gratificacion:gratificacion, topeGrat:topeGrat,
       imponible:imponible, topeAfp:topeAfp, topeAfc:topeAfc,
       topeadoAfp: imponible > topeAfp, topeadoAfc: imponible > topeAfc,
@@ -553,6 +595,35 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
       noImponibles:noImponibles, totalHaberes:totalHaberes, totalDescuentos:totalDescuentos,
       liquido:liquido
     };
+  }
+
+  function tasaMutual(){
+    var v = leerDecimal($("f-mutual"));
+    return (isFinite(v) && v >= 0 ? v : 0.90) / 100;
+  }
+
+  /* Sueldo base mínimo cuyo líquido alcanza el objetivo. La función es creciente
+     y lineal por tramos, así que la búsqueda binaria da el valor exacto. */
+  function baseParaLiquido(objetivo){
+    if(objetivo <= 0) return 0;
+    var lo = 0, hi = Math.max(100000, objetivo * 2), guardia = 0;
+    while(liquidar(hi).liquido < objetivo && guardia < 60){ hi *= 2; guardia++; }
+    while(lo < hi){
+      var mid = Math.floor((lo + hi) / 2);
+      if(liquidar(mid).liquido >= objetivo) hi = mid; else lo = mid + 1;
+    }
+    return lo;
+  }
+
+  function esModoInverso(){ return $("m-inverso").checked; }
+
+  function calcular(){
+    var pedido = leerMonto(elBase);
+    var base = esModoInverso() ? baseParaLiquido(pedido) : pedido;
+    var r = liquidar(base);
+    r.modoInverso = esModoInverso();
+    r.objetivo = pedido;
+    return r;
   }
 
   /* ---------- pintado ---------- */
@@ -658,6 +729,38 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     L.appendChild(fila("tot", "var(--c-liquido)", "Sueldo líquido", null, clp(r.liquido)));
   }
 
+  function pintarEmpleador(r){
+    var L = $("lines-emp");
+    L.textContent = "";
+    var E = IND.empleador;
+    function pct(t){ return fDec.format(t*100) + "%"; }
+
+    L.appendChild(fila("", null, "Remuneración del trabajador",
+      "Imponible más haberes no imponibles", clp(r.imponible + r.noImponibles)));
+    L.appendChild(fila("", null, "Seguro de cesantía",
+      pct(r.esIndefinido ? E.afcIndefinido : E.afcPlazoFijo) +
+      (r.esIndefinido ? " (contrato indefinido)" : " (plazo fijo)"), "+ " + clp(r.eAfc)));
+    L.appendChild(fila("", null, "Seguro de invalidez y sobrevivencia",
+      pct(E.sis), "+ " + clp(r.eSis)));
+    L.appendChild(fila("", null, "Seguro social expectativa de vida",
+      pct(E.expectativaVida), "+ " + clp(r.eExpect)));
+    L.appendChild(fila("", null, "Rentabilidad protegida",
+      pct(E.rentabilidadProtegida), "+ " + clp(r.eRent)));
+    L.appendChild(fila("", null, "Cuenta individual en la AFP",
+      pct(E.cuentaIndividual), "+ " + clp(r.eCuenta)));
+    L.appendChild(fila("", null, "Mutual Ley 16.744",
+      fDec.format(tasaMutual()*100) + "% sobre la renta imponible", "+ " + clp(r.eMutual)));
+    L.appendChild(fila("sum", null, "Total aportes del empleador", null, "+ " + clp(r.eTotal)));
+    L.appendChild(fila("tot", null, "Costo total mensual", null, clp(r.costoEmpleador)));
+
+    $("out-costo").textContent = clp(r.costoEmpleador);
+    var sobre = r.imponible + r.noImponibles;
+    $("out-costo-sub").textContent = sobre > 0
+      ? "Por cada $100 de remuneración, el empleador desembolsa $" +
+        new Intl.NumberFormat("es-CL",{maximumFractionDigits:1}).format(r.costoEmpleador/sobre*100) + "."
+      : "";
+  }
+
   function pintarPie(r){
     var partes = [];
     partes.push("Tope imponible AFP y salud: " + fDec.format(IND.topeAfpUF) + " UF = " + clp(r.topeAfp) + ".");
@@ -674,7 +777,19 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     $("out-pct").textContent = r.totalHaberes > 0 ? pct(r.liquido/r.totalHaberes*100) : "0%";
     pintarBarra(r);
     pintarDesglose(r);
+    pintarEmpleador(r);
     pintarPie(r);
+
+    var inv = r.modoInverso;
+    $("base-lab").textContent = inv ? "Sueldo líquido que quiero recibir" : "Sueldo base mensual";
+    var bh = $("base-hint");
+    bh.hidden = !inv;
+    if(inv){
+      bh.textContent = r.liquido === r.objetivo
+        ? "Hay que negociar un sueldo base de " + clp(r.base) + "."
+        : "Con pesos enteros no hay un base que deje exactamente " + clp(r.objetivo) +
+          ". El más bajo que alcanza la meta es " + clp(r.base) + ", que deja " + clp(r.liquido) + ".";
+    }
 
     $("afp-hint").textContent = "Tasa total " + fDec.format(r.afpSel.tasa) + "%: 10% obligatorio + " + fDec.format(r.afpSel.tasa-10) + "% de comisión.";
     $("afc-hint").textContent = r.esIndefinido
@@ -722,7 +837,19 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     });
     el.addEventListener("blur", function(){ if(!el.value) el.value = "0"; render(); });
   });
-  [elGrat, elAfp, elPlan, elCargas].forEach(function(el){
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="modo"]'), function(el){
+    el.addEventListener("change", function(){
+      // El evento llega con el modo YA cambiado, así que el valor del campo hay
+      // que interpretarlo con el modo anterior: al entrar a inverso venía siendo
+      // un sueldo base, y al salir venía siendo un líquido pedido.
+      var valor = leerMonto(elBase);
+      elBase.value = fNum.format(esModoInverso()
+        ? liquidar(valor).liquido
+        : baseParaLiquido(valor));
+      render();
+    });
+  });
+  [elGrat, elAfp, elPlan, elCargas, $("f-mutual")].forEach(function(el){
     el.addEventListener("input", render);
     el.addEventListener("change", render);
   });
@@ -753,6 +880,13 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
       topeAfpUF: +d.topeAfpUF, topeAfcUF: +d.topeAfcUF,
       tasaAfcIndefinido: isFinite(+d.tasaAfcIndefinido) ? +d.tasaAfcIndefinido : RESPALDO.tasaAfcIndefinido,
       tasaSaludLegal: isFinite(+d.tasaSaludLegal) ? +d.tasaSaludLegal : RESPALDO.tasaSaludLegal,
+      empleador: (function(){
+        var e = d.empleador, base = RESPALDO.empleador, out = {}, ok = e && typeof e === "object";
+        Object.keys(base).forEach(function(k){
+          out[k] = (ok && isFinite(+e[k]) && +e[k] >= 0) ? +e[k] : base[k];
+        });
+        return out;
+      })(),
       afps: Array.isArray(d.afps) ? d.afps.filter(function(a){
               return a && typeof a.id==="string" && typeof a.nombre==="string" && isFinite(+a.tasa);
             }).map(function(a){ return {id:a.id, nombre:a.nombre, tasa:+a.tasa}; }) : [],
