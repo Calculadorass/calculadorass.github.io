@@ -57,6 +57,27 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"Public Sans",ui
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:16px}
 .card-h{padding:15px 18px 0}
 .card-h h2{margin:0;font-family:"Bricolage Grotesque","Public Sans",sans-serif;font-size:12.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.card-h.conbtn{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+.btn{
+  font:inherit;font-size:12.5px;font-weight:600;color:var(--accent-ink);
+  background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 26%,transparent);
+  border-radius:100px;padding:6px 14px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:7px;
+  transition:background .14s,border-color .14s,color .14s;
+}
+.btn:hover{background:color-mix(in srgb,var(--accent) 16%,transparent)}
+.btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.btn.ok{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn svg{width:13px;height:13px;flex:none}
+
+.copiatexto{
+  width:100%;margin-top:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:11.5px;line-height:1.5;color:var(--ink);background:var(--surface-2);
+  border:1px solid var(--line-strong);border-radius:var(--r-sm);padding:11px 12px;
+  min-height:220px;resize:vertical;
+}
+.copiatexto:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .card-b{padding:16px 18px 19px}
 
 .rejilla{display:grid;gap:14px;grid-template-columns:1fr 1fr}
@@ -261,9 +282,19 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
   </section>
 
   <section class="card">
-    <div class="card-h"><h2>Detalle</h2></div>
+    <div class="card-h conbtn">
+      <h2>Detalle</h2>
+      <button class="btn" id="btn-copiar" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="9" y="9" width="12" height="12" rx="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        <span id="btn-copiar-txt">Copiar detalle</span>
+      </button>
+    </div>
     <div class="card-b">
       <div class="lines" id="lines"></div>
+      <textarea class="copiatexto" id="copia-texto" readonly hidden aria-label="Detalle del finiquito para copiar"></textarea>
       <p class="aviso" id="aviso-trib"></p>
     </div>
   </section>
@@ -542,18 +573,128 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     });
   }
 
+  /* ---------- texto para copiar ---------- */
+  var ultimo = null;   // último resultado válido, para el botón de copiar
+
+  function fechaCL(d){
+    return String(d.getUTCDate()).padStart(2,"0") + "-" +
+           String(d.getUTCMonth()+1).padStart(2,"0") + "-" + d.getUTCFullYear();
+  }
+  function nombreCausal(c){
+    return c === "161" ? "Art. 161 — Necesidades de la empresa o desahucio"
+         : c === "159" ? "Art. 159 — Renuncia, mutuo acuerdo o vencimiento del plazo"
+         : "Art. 160 — Caducidad por falta imputable al trabajador";
+  }
+  function nombreJornada(j){
+    return j === "parcial" ? "Parcial" : (j === "diario" ? "Sueldo diario" : "Completa");
+  }
+  /* Alinea "etiqueta ....... valor" a un ancho fijo, para que el texto pegado
+     en un correo se lea como una tabla. */
+  function linea(etiqueta, valor, ancho){
+    var a = ancho || 38;
+    var e = String(etiqueta);
+    if(e.length >= a) return e + "  " + valor;
+    return e + " ".repeat(a - e.length) + valor;
+  }
+
+  function textoDetalle(r){
+    var L = [];
+    L.push("FINIQUITO — cálculo referencial");
+    L.push("");
+    L.push(linea("Inicio del contrato", fechaCL(r.x.ini)));
+    L.push(linea("Término del contrato", fechaCL(r.x.fin)));
+    L.push(linea("Antigüedad", r.ant.anios + " años, " + r.ant.meses + " meses y " + r.ant.dias + " días"));
+    L.push(linea("Causal", nombreCausal(r.x.causal)));
+    L.push(linea("Jornada", nombreJornada(r.x.jornada)));
+    L.push("");
+    L.push(linea("Remuneración fija", clp(r.x.fija)));
+    L.push(linea("Promedio variable (3 meses)", clp(r.x.promVariable)));
+    L.push(linea("Base de cálculo (Art. 172)", clp(r.base) + (r.topeAplicado ? "  [topada en 90 UF]" : "")));
+    L.push(linea("Valor del día", clp(r.valorDia)));
+    L.push(linea("Años indemnizables", String(r.aniosIndem) + (r.topeAniosAplicado ? "  [tope de 11]" : "")));
+    L.push("");
+    L.push("DETALLE");
+    L.push("-".repeat(56));
+
+    L.push(linea("Indemnización por años de servicio", clp(r.ias)));
+    if(r.ias) L.push("   " + r.aniosIndem + (r.aniosIndem === 1 ? " año × " : " años × ") + clp(r.base));
+    L.push(linea("Indemnización sustitutiva del aviso", clp(r.aviso)));
+    L.push(linea("Feriado proporcional", clp(r.feriado)));
+    L.push("   " + f2.format(r.diasHabilesFeriado) + " días hábiles + " + r.inhabiles +
+           " inhábiles = " + f2.format(r.diasPagados) + " días × " + clp(r.valorDia));
+    L.push(linea("Días trabajados del mes", clp(r.diasTrabajados)));
+    L.push("   " + r.diasMes + " días × " + clp(r.valorDia));
+    L.push("-".repeat(56));
+    L.push(linea("TOTAL FINIQUITO", clp(r.total)));
+    L.push("");
+    L.push("Las indemnizaciones legales por años de servicio y por falta de");
+    L.push("aviso no constituyen renta. El feriado proporcional y los días");
+    L.push("trabajados son remuneración y quedan afectos a cotizaciones e");
+    L.push("Impuesto Único. Los montos están en bruto.");
+    if(!r.feriadosConocidos){
+      L.push("");
+      L.push("Aviso: no había feriados cargados para ese año, así que el");
+      L.push("feriado proporcional contó solo sábados y domingos como");
+      L.push("inhábiles. Si hubo festivos en el período, el monto es mayor.");
+    }
+    L.push("");
+    L.push("Calculado en https://calculadorass.github.io/finiquito/");
+    return L.join("\n");
+  }
+
+  function avisarCopiado(ok){
+    var btn = $("btn-copiar"), txt = $("btn-copiar-txt");
+    txt.textContent = ok ? "Copiado" : "Copia desde el recuadro";
+    btn.classList.toggle("ok", !!ok);
+    setTimeout(function(){
+      txt.textContent = "Copiar detalle";
+      btn.classList.remove("ok");
+    }, 2200);
+  }
+
+  $("btn-copiar").addEventListener("click", function(){
+    if(!ultimo) return;
+    var texto = textoDetalle(ultimo);
+    var caja = $("copia-texto");
+    caja.value = texto;
+
+    // El portapapeles puede estar bloqueado (contexto no seguro, permisos del
+    // navegador). En ese caso se muestra el texto ya seleccionado para copiarlo
+    // a mano, en vez de dejar al botón sin hacer nada.
+    function respaldo(){
+      caja.hidden = false;
+      caja.focus();
+      try{ caja.setSelectionRange(0, caja.value.length); }catch(e){}
+      avisarCopiado(false);
+    }
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(texto).then(function(){
+          caja.hidden = true;
+          avisarCopiado(true);
+        })["catch"](respaldo);
+      } else respaldo();
+    }catch(e){ respaldo(); }
+  });
+
   function render(){
     FERIADOS = setFeriados();
     var r = calcular();
 
     if(r.error){
+      ultimo = null;
       $("res-n").textContent = "—";
       $("res-sub").textContent = r.error;
       $("bar").textContent = ""; $("keys").textContent = "";
       $("lines").textContent = ""; $("datos").textContent = "";
       $("aviso-tope").hidden = true;
+      $("btn-copiar").disabled = true;
+      $("copia-texto").hidden = true;
       return;
     }
+    ultimo = r;
+    $("btn-copiar").disabled = false;
+    $("copia-texto").hidden = true;   // los montos cambiaron: se oculta el respaldo anterior
 
     $("res-n").textContent = clp(r.total);
     $("res-sub").textContent = "";
