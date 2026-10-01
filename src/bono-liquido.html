@@ -334,10 +334,20 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     var v = String(el.value||"").replace(/[^\d]/g,"");
     return v ? parseInt(v,10) : 0;
   }
+  /* Acepta "12,5" y "12.5". La coma siempre manda como separador decimal; sin
+     coma, un punto que agrupa de a tres dígitos se lee como separador de miles
+     y en cualquier otro caso como decimal, para que "7.5" no termine en 75. */
   function leerDecimal(el){
-    var v = String(el.value||"").replace(/\./g,"").replace(",",".").replace(/[^\d.]/g,"");
+    var v = String(el.value||"").trim().replace(/[^\d.,]/g,"");
+    if(!v) return 0;
+    if(v.indexOf(",") >= 0){
+      v = v.replace(/\./g,"").replace(",",".");
+    } else {
+      var partes = v.split(".");
+      if(partes.length > 2 || (partes.length === 2 && partes[1].length === 3)) v = partes.join("");
+    }
     var n = parseFloat(v);
-    return isFinite(n) && n>0 ? n : 0;
+    return isFinite(n) && n > 0 ? n : 0;
   }
   function esModoLiquido(){ return $("m-liquido").checked; }
 
