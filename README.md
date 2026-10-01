@@ -108,6 +108,24 @@ a la empresa. Las tasas de cargo del empleador viven en `indicadores.json` bajo
 individual 0,10%), más el seguro de cesantía y la mutual de la Ley 16.744, cuya
 tasa adicional por riesgo se ingresa en la página porque varía por empresa.
 
+## Plazos legales
+
+El Código del Trabajo usa dos nociones distintas de "día hábil" y la calculadora
+de finiquito las mantiene separadas: para el **feriado anual** el sábado es
+inhábil (Art. 69), mientras que para los **plazos legales** se cuenta de lunes a
+sábado y solo los domingos y festivos son inhábiles. Confundirlas corre las
+fechas varios días.
+
+Con esa regla y el calendario de feriados se calculan las fechas de la carta de
+aviso (Art. 162), el pago del finiquito (Art. 177) y los plazos para demandar
+(Art. 168).
+
+## Compartir un cálculo
+
+La calculadora de finiquito arma un link con todos los datos en el hash de la
+URL, en texto plano y legible. No hay servidor ni almacenamiento: quien abre el
+link recibe el mismo cálculo porque la página lo reconstruye desde el link.
+
 ## Redondeo
 
 Los montos se llevan en pesos enteros y cada cotización se redondea al

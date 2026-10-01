@@ -71,7 +71,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"Public Sans",ui
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:16px}
 .card-h{padding:15px 18px 0}
 .card-h h2{margin:0;font-family:"Bricolage Grotesque","Public Sans",sans-serif;font-size:12.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
-.card-h.conbtn{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.card-h.conbtn{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap}
+.card-h.conbtn .btn+.btn{margin-left:0}
 
 .btn{
   font:inherit;font-size:12.5px;font-weight:600;color:var(--accent-ink);
@@ -153,9 +154,10 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
 .pill{display:inline-block;margin-left:7px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:100px;background:var(--surface-2);color:var(--ink-3);vertical-align:1px}
 .pill.no{background:var(--accent-soft);color:var(--accent-ink)}
 
-.datos{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-.datos div{background:var(--surface);padding:11px 13px}
-.datos div:last-child{grid-column:auto/-1}
+/* Flex en vez de grid: en la última fila los items crecen y reparten el ancho,
+   así nunca queda una celda vacía por tener un número impar de datos. */
+.datos{display:flex;flex-wrap:wrap;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.datos div{flex:1 1 140px;min-width:0;background:var(--surface);padding:11px 13px}
 .datos dt{margin:0;font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
 .datos dd{margin:3px 0 0;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
 .datos dd small{display:block;font-size:11px;font-weight:500;color:var(--ink-3);margin-top:1px;letter-spacing:0}
@@ -338,6 +340,13 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
   <section class="card">
     <div class="card-h conbtn">
       <h2>Detalle</h2>
+      <button class="btn" id="btn-compartir" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"></path>
+          <path d="M16 6l-4-4-4 4"></path><path d="M12 2v14"></path>
+        </svg>
+        <span id="btn-compartir-txt">Compartir link</span>
+      </button>
       <button class="btn" id="btn-copiar" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="9" y="9" width="12" height="12" rx="2"></rect>
@@ -353,7 +362,11 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     </div>
   </section>
 
-  <p class="seccion">Datos del cálculo</p>
+  <p class="seccion">Plazos legales</p>
+  <dl class="datos" id="plazos"></dl>
+  <p class="aviso" id="aviso-plazos" hidden></p>
+
+  <p class="seccion" style="margin-top:22px">Datos del cálculo</p>
   <dl class="datos" id="datos"></dl>
 
   <p class="foot" id="foot"></p>
@@ -427,10 +440,29 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
   }
   var FERIADOS = {};
 
+  /* El Código del Trabajo usa dos nociones distintas de "día hábil":
+     - Para el FERIADO anual el sábado es inhábil (Art. 69).
+     - Para los PLAZOS legales se cuenta de lunes a sábado: solo domingos y
+       festivos son inhábiles.
+     Confundirlas corre las fechas varios días, así que van separadas. */
   function esHabil(d){
     var dow = d.getUTCDay();                 // 0 domingo, 6 sábado
-    if(dow === 0 || dow === 6) return false; // el sábado es inhábil para el feriado (Art. 69)
+    if(dow === 0 || dow === 6) return false;
     return !FERIADOS[iso(d)];
+  }
+  function esHabilPlazo(d){
+    if(d.getUTCDay() === 0) return false;    // solo el domingo
+    return !FERIADOS[iso(d)];
+  }
+  /* Fecha que resulta de contar n días hábiles desde el día siguiente a la base. */
+  function sumarHabiles(base, n){
+    var cur = base, contados = 0, guardia = 0;
+    while(contados < n && guardia < 1000){
+      cur = sumarDias(cur, 1);
+      if(esHabilPlazo(cur)) contados++;
+      guardia++;
+    }
+    return cur;
   }
   function anioCubierto(d){
     var anios = (IND.feriados && IND.feriados.anios) || {};
@@ -568,6 +600,18 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     var diasMes = x.fin.getUTCDate();
     var diasTrabajados = Math.round(valorDia * diasMes);
 
+    // Plazos legales contados desde la separación, en días hábiles de lunes a
+    // sábado y saltando los festivos cargados.
+    var avisoDias = x.causal === "159" ? 6 : 3;   // Art. 162: 6 días si es caso fortuito
+    var plazos = {
+      aviso:    sumarHabiles(x.fin, avisoDias),
+      avisoDias: avisoDias,
+      pago:     sumarHabiles(x.fin, 10),          // Art. 177
+      reclamo:  sumarHabiles(x.fin, 60),          // Art. 168
+      tope:     sumarHabiles(x.fin, 90)           // Art. 168, tope con reclamo administrativo
+    };
+    var plazosConocidos = anioCubierto(x.fin) && anioCubierto(plazos.tope);
+
     var voluntaria = x.voluntaria;
     var totalBruto = ias + aviso + voluntaria + feriado + diasTrabajados;
     var descuentos = Math.min(x.descuentos, totalBruto);   // no puede dejar el finiquito en negativo
@@ -586,7 +630,8 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
       diasComunes:diasComunes, diasProgresivos:diasProgresivos,
       tomadosExceden:tomadosExceden, pendientesExceden:pendientesExceden,
       diasPagados:diasPagados, inhabiles:inhabiles, enteros:enteros,
-      diasMes:diasMes, feriadosConocidos:feriadosConocidos
+      diasMes:diasMes, feriadosConocidos:feriadosConocidos,
+      plazos:plazos, plazosConocidos:plazosConocidos
     };
   }
 
@@ -778,6 +823,11 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
       L.push(linea("TOTAL FINIQUITO", clp(r.total)));
     }
     L.push("");
+    L.push("PLAZOS LEGALES");
+    L.push(linea("Carta de aviso", fechaLarga(r.plazos.aviso) + "  (" + r.plazos.avisoDias + " días hábiles)"));
+    L.push(linea("Pago del finiquito", fechaLarga(r.plazos.pago) + "  (10 días hábiles)"));
+    L.push(linea("Plazo para demandar", fechaLarga(r.plazos.reclamo) + "  (60 días hábiles)"));
+    L.push("");
     L.push("Las indemnizaciones legales por años de servicio y por falta de");
     L.push("aviso no constituyen renta. El feriado proporcional y los días");
     L.push("trabajados son remuneración y quedan afectos a cotizaciones e");
@@ -815,6 +865,86 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     }, 2200);
   }
 
+  /* ---------- compartir por link ----------
+     Los datos viajan en el hash, en texto plano y legible: así el link se puede
+     revisar a ojo antes de mandarlo y no depende de ningún servidor. */
+  var CAMPOS = [
+    ["i",  "f-inicio",      "txt"], ["f",  "f-termino",   "txt"],
+    ["c",  "f-causal",      "sel"], ["av", "f-aviso",     "chk"],
+    ["fj", "f-fija",        "txt"], ["vd", "f-valordia",  "txt"],
+    ["dm", "f-diasmes",     "txt"], ["ds", "f-dias-sem",  "txt"],
+    ["v1", "v1",            "txt"], ["v2", "v2",          "txt"], ["v3", "v3", "txt"],
+    ["vo", "f-voluntaria",  "txt"], ["de", "f-descuentos","txt"],
+    ["pg", "f-progresivos", "txt"], ["dv", "f-dias-vac",  "txt"]
+  ];
+
+  function jornadaActual(){
+    return $("j-parcial").checked ? "parcial" : ($("j-diario").checked ? "diario" : "completa");
+  }
+
+  function armarLink(){
+    var partes = [];
+    CAMPOS.forEach(function(c){
+      var el = $(c[1]);
+      var v = c[2] === "chk" ? (el.checked ? "1" : "0") : String(el.value || "");
+      if(v !== "") partes.push(c[0] + "=" + encodeURIComponent(v));
+    });
+    partes.push("j=" + jornadaActual());
+    partes.push("md=" + ($("d-pendientes").checked ? "p" : "t"));
+    return location.origin + location.pathname + "#" + partes.join("&");
+  }
+
+  function leerLink(){
+    var h = (location.hash || "").replace(/^#/, "");
+    if(!h || h.indexOf("=") < 0) return false;
+    var mapa = {};
+    h.split("&").forEach(function(par){
+      var i = par.indexOf("=");
+      if(i > 0) mapa[par.slice(0, i)] = decodeURIComponent(par.slice(i + 1));
+    });
+    var algo = false;
+    CAMPOS.forEach(function(c){
+      if(!(c[0] in mapa)) return;
+      var el = $(c[1]), v = mapa[c[0]];
+      if(c[2] === "chk") el.checked = v === "1"; else el.value = v;
+      algo = true;
+    });
+    if(mapa.j){
+      $(mapa.j === "parcial" ? "j-parcial" : mapa.j === "diario" ? "j-diario" : "j-completa").checked = true;
+      $("wrap-diario").hidden  = mapa.j !== "diario";
+      $("wrap-fija").hidden    = mapa.j === "diario";
+      $("wrap-parcial").hidden = mapa.j !== "parcial";
+      algo = true;
+    }
+    if(mapa.md){ $(mapa.md === "p" ? "d-pendientes" : "d-tomados").checked = true; algo = true; }
+    return algo;
+  }
+
+  function avisarCompartido(ok){
+    var txt = $("btn-compartir-txt"), btn = $("btn-compartir");
+    txt.textContent = ok ? "Link copiado" : "Copia el link del recuadro";
+    btn.classList.toggle("ok", !!ok);
+    setTimeout(function(){ txt.textContent = "Compartir link"; btn.classList.remove("ok"); }, 2200);
+  }
+
+  $("btn-compartir").addEventListener("click", function(){
+    var link = armarLink();
+    try{ history.replaceState(null, "", link); }catch(e){}
+    var caja = $("copia-texto");
+    function respaldo(){
+      caja.value = link; caja.hidden = false; caja.focus();
+      try{ caja.setSelectionRange(0, caja.value.length); }catch(e){}
+      avisarCompartido(false);
+    }
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(link).then(function(){
+          caja.hidden = true; avisarCompartido(true);
+        })["catch"](respaldo);
+      } else respaldo();
+    }catch(e){ respaldo(); }
+  });
+
   $("btn-copiar").addEventListener("click", function(){
     if(!ultimo) return;
     var texto = textoDetalle(ultimo);
@@ -840,6 +970,40 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     }catch(e){ respaldo(); }
   });
 
+  var DIAS_SEM = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+  function fechaLarga(d){ return DIAS_SEM[d.getUTCDay()] + " " + fechaCL(d); }
+
+  function pintarPlazos(r){
+    var c = $("plazos");
+    c.textContent = "";
+    var items = [
+      ["Carta de aviso", fechaLarga(r.plazos.aviso), r.plazos.avisoDias + " días hábiles · Art. 162"],
+      ["Copia a la Inspección", fechaLarga(r.plazos.aviso), "mismo plazo que la carta"],
+      ["Pago del finiquito", fechaLarga(r.plazos.pago), "10 días hábiles · Art. 177"],
+      ["Plazo para demandar", fechaLarga(r.plazos.reclamo), "60 días hábiles · Art. 168"],
+      ["Tope con reclamo en la DT", fechaLarga(r.plazos.tope), "90 días hábiles · Art. 168"]
+    ];
+    items.forEach(function(it){
+      var d = document.createElement("div");
+      var dt = document.createElement("dt"); dt.textContent = it[0];
+      var dd = document.createElement("dd");
+      dd.textContent = it[1];
+      dd.style.fontSize = "13.5px";
+      var sm = document.createElement("small"); sm.textContent = it[2];
+      dd.appendChild(sm);
+      d.appendChild(dt); d.appendChild(dd); c.appendChild(d);
+    });
+
+    var av = $("aviso-plazos");
+    if(!r.plazosConocidos){
+      av.hidden = false;
+      av.textContent = "Faltan feriados cargados para alguno de esos años, así que los plazos " +
+        "se contaron saltando solo los domingos. Con festivos de por medio las fechas se corren.";
+    } else {
+      av.hidden = true; av.textContent = "";
+    }
+  }
+
   function render(){
     FERIADOS = setFeriados();
     var r = calcular();
@@ -850,6 +1014,8 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
       $("res-sub").textContent = r.error;
       $("bar").textContent = ""; $("keys").textContent = "";
       $("lines").textContent = ""; $("datos").textContent = "";
+      $("plazos").textContent = ""; $("aviso-plazos").hidden = true;
+      $("btn-compartir").disabled = true;
       $("aviso-tope").hidden = true;
       $("btn-copiar").disabled = true;
       $("copia-texto").hidden = true;
@@ -857,6 +1023,7 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     }
     ultimo = r;
     $("btn-copiar").disabled = false;
+    $("btn-compartir").disabled = false;
     $("copia-texto").hidden = true;   // los montos cambiaron: se oculta el respaldo anterior
 
     $("hero-lab").textContent = r.descuentos > 0 ? "Total a pagar" : "Total finiquito";
@@ -878,6 +1045,7 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
 
     pintarBarra(r);
     pintarDetalle(r);
+    pintarPlazos(r);
     pintarDatos(r);
 
     // avisos
@@ -985,6 +1153,7 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     });
   });
 
+  leerLink();
   render();
 
   /* ---------- indicadores al día ---------- */
