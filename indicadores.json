@@ -171,5 +171,25 @@
     "diasBase": 15,
     "aniosParaProgresivo": 10,
     "aniosPorDiaExtra": 3
+  },
+  "jornada": {
+    "origen": "Ley 21.561",
+    "semanalHoras": 42,
+    "recargoExtra": 0.5,
+    "recargoDomingo": 0.3,
+    "calendario": [
+      {
+        "desde": "2024-04-26",
+        "horas": 44
+      },
+      {
+        "desde": "2026-04-26",
+        "horas": 42
+      },
+      {
+        "desde": "2028-04-26",
+        "horas": 40
+      }
+    ]
   }
 }

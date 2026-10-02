@@ -13,6 +13,7 @@ dependencias ni backend, servidas por GitHub Pages.
 | **Boleta de honorarios** | Disponible | [`/boleta-honorarios/`](https://calculadorass.github.io/boleta-honorarios/) |
 | **Bono líquido** | Disponible | [`/bono-liquido/`](https://calculadorass.github.io/bono-liquido/) |
 | **Finiquito** | Disponible | [`/finiquito/`](https://calculadorass.github.io/finiquito/) |
+| **Horas extra** | Disponible | [`/horas-extra/`](https://calculadorass.github.io/horas-extra/) |
 
 ## Indicadores compartidos
 
@@ -50,12 +51,14 @@ src/sueldo-liquido.html   fuente de la calculadora de sueldo
 src/boleta-honorarios.html fuente de la calculadora de honorarios
 src/bono-liquido.html     fuente de la calculadora de bonos
 src/finiquito.html        fuente de la calculadora de finiquito
+src/horas-extra.html      fuente de la calculadora de horas extra
 build.sh                  genera las páginas agregando el envoltorio HTML
 index.html                portada            (generado — no editar a mano)
 sueldo-liquido/index.html sueldo líquido     (generado — no editar a mano)
 boleta-honorarios/index.html honorarios      (generado — no editar a mano)
 bono-liquido/index.html   bono líquido       (generado — no editar a mano)
 finiquito/index.html      finiquito          (generado — no editar a mano)
+horas-extra/index.html    horas extra        (generado — no editar a mano)
 indicadores.json          valores del mes, compartidos
 ```
 
@@ -112,6 +115,20 @@ a la empresa. Las tasas de cargo del empleador viven en `indicadores.json` bajo
 (SIS 1,78% + expectativa de vida 0,72% + rentabilidad protegida 0,90% + cuenta
 individual 0,10%), más el seguro de cesantía y la mutual de la Ley 16.744, cuya
 tasa adicional por riesgo se ingresa en la página porque varía por empresa.
+
+## Jornada y horas extra
+
+`indicadores.json` guarda bajo `jornada` la jornada ordinaria semanal vigente y
+el calendario de la Ley 21.561: 44 horas desde el 26-04-2024, **42 desde el
+26-04-2026** y 40 desde el 26-04-2028. La calculadora elige sola el tramo que
+corresponde a la fecha de hoy y muestra lo que valdrá la hora en los demás.
+
+El valor de la hora ordinaria sigue el criterio de la Dirección del Trabajo:
+sueldo mensual × 7 ÷ (30 × jornada semanal). Con 42 horas son 180 horas al mes.
+
+Los recargos no se suman: el 30% del domingo (Art. 38, comercio y servicios)
+pasa a ser la base de cálculo de la hora extraordinaria de ese día, así que la
+hora extra en domingo es hora × 1,30 × 1,50 y no × 1,80.
 
 ## Plazos legales
 

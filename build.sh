@@ -17,6 +17,7 @@ sueldo-liquido.html:sueldo-liquido/index.html
 boleta-honorarios.html:boleta-honorarios/index.html
 bono-liquido.html:bono-liquido/index.html
 finiquito.html:finiquito/index.html
+horas-extra.html:horas-extra/index.html
 "
 
 envolver() {
@@ -46,6 +47,7 @@ descripcion_de() {
     boleta-honorarios.html) echo "Convierte entre monto líquido y monto bruto de una boleta de honorarios en Chile, con la retención vigente del SII." ;;
     bono-liquido.html)   echo "Calcula el bono bruto necesario para que llegue un monto líquido exacto, considerando cotizaciones, topes imponibles e Impuesto Único." ;;
     finiquito.html)      echo "Calcula el finiquito en Chile: indemnización por años de servicio, mes de aviso, vacaciones pendientes y días del mes, según el Código del Trabajo." ;;
+    horas-extra.html)    echo "Valor de la hora ordinaria, extraordinaria y de domingo en Chile, con la jornada vigente de la Ley 21.561 y los recargos legales." ;;
     *)                   echo "Calculadoras laborales y previsionales para Chile." ;;
   esac
 }

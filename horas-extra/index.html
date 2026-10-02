@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Valor de la hora ordinaria, extraordinaria y de domingo en Chile, con la jornada vigente de la Ley 21.561 y los recargos legales.">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font:14px/1.5 system-ui,sans-serif;background:#fafaf9}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>Calculadora de Horas Extra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+
+<style>
+:root{
+  --bg:#F6F8F7; --surface:#FFFFFF; --surface-2:#F0F4F2;
+  --ink:#12201D; --ink-2:#4C5C58; --ink-3:#7C8C87;
+  --line:#E1E8E5; --line-strong:#CBD6D2;
+  --accent:#00897A; --accent-ink:#00655B; --accent-soft:#E4F2EF; --focus:#00897A;
+  --c-ord:#8F7500; --c-extra:#00897A; --c-dom:#2563C9; --c-extradom:#A82D86;
+  --shadow:0 1px 2px rgba(18,32,29,.05), 0 8px 24px -12px rgba(18,32,29,.18);
+  --r:14px; --r-sm:9px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0C1412; --surface:#141E1B; --surface-2:#1A2622;
+    --ink:#E7EFEC; --ink-2:#9FB0AB; --ink-3:#718380;
+    --line:#23322E; --line-strong:#33453F;
+    --accent:#2FB39B; --accent-ink:#57C9B3; --accent-soft:#12302A; --focus:#2FB39B;
+    --c-ord:#9A8226; --c-extra:#1E9B85; --c-dom:#4A80D6; --c-extradom:#C05CA0;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0C1412; --surface:#141E1B; --surface-2:#1A2622;
+  --ink:#E7EFEC; --ink-2:#9FB0AB; --ink-3:#718380;
+  --line:#23322E; --line-strong:#33453F;
+  --accent:#2FB39B; --accent-ink:#57C9B3; --accent-soft:#12302A; --focus:#2FB39B;
+  --c-ord:#9A8226; --c-extra:#1E9B85; --c-dom:#4A80D6; --c-extradom:#C05CA0;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Public Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:28px 56px}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+.volver{display:inline-flex;align-items:center;gap:6px;margin-bottom:12px;font-size:12.5px;font-weight:600;color:var(--ink-3);text-decoration:none}
+.volver:hover{color:var(--accent-ink)}
+.volver:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:4px}
+.volver em{font-style:normal;transition:transform .16s}
+.volver:hover em{transform:translateX(-3px)}
+
+.masthead{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
+.brand h1{font-family:"Bricolage Grotesque","Public Sans",sans-serif;font-weight:800;font-size:clamp(25px,5.2vw,36px);letter-spacing:-.027em;line-height:1.05;margin:0;text-wrap:balance}
+.brand p{margin:5px 0 0;color:var(--ink-2);font-size:14px;max-width:48ch}
+.stamp{display:inline-flex;align-items:center;gap:8px;background:var(--accent-soft);color:var(--accent-ink);border:1px solid color-mix(in srgb,var(--accent) 26%,transparent);border-radius:100px;padding:6px 13px;font-size:12px;font-weight:600;white-space:nowrap}
+.stamp .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:16px}
+.card-h{padding:15px 18px 0}
+.card-h h2{margin:0;font-family:"Bricolage Grotesque","Public Sans",sans-serif;font-size:12.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.card-b{padding:16px 18px 19px}
+
+.rejilla{display:grid;gap:14px;grid-template-columns:1fr 1fr}
+@media (max-width:520px){.rejilla{grid-template-columns:1fr}}
+.ancho{grid-column:1/-1}
+.campo{min-width:0}
+label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--ink)}
+.input{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-sm);padding:9px 11px;font-variant-numeric:tabular-nums}
+.input:focus-visible,.seg input:focus-visible+span{outline:2px solid var(--focus);outline-offset:2px}
+.money{position:relative}
+.money .peso{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:15px;pointer-events:none}
+.money .input{padding-left:26px}
+.hint{font-size:11.5px;color:var(--ink-3);margin:6px 0 0;line-height:1.45}
+
+.seg{display:flex;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden}
+.seg label{flex:1;display:block;position:relative;min-width:0}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg span{display:block;text-align:center;padding:8px 6px;background:var(--surface);font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;transition:background .13s,color .13s;white-space:nowrap}
+.seg span b{display:block;font-size:10px;font-weight:500;opacity:.75;margin-top:1px}
+.seg input:checked+span{background:var(--accent);color:#fff}
+
+/* ---------- valores de la hora ---------- */
+.valores{display:grid;grid-template-columns:repeat(auto-fit,minmax(152px,1fr));gap:12px}
+.val{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:14px 15px 15px;position:relative;overflow:hidden;
+}
+.val::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c)}
+.val dt{margin:0;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);line-height:1.3}
+.val dd{
+  margin:7px 0 0;font-family:"Bricolage Grotesque","Public Sans",sans-serif;
+  font-weight:800;font-size:clamp(22px,4.6vw,28px);letter-spacing:-.025em;
+  font-variant-numeric:tabular-nums;line-height:1;
+}
+.val .fx{display:block;margin-top:6px;font-family:"Public Sans",sans-serif;font-size:11.5px;font-weight:500;letter-spacing:0;color:var(--ink-3)}
+.val.destacado{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+.val.destacado dd{color:var(--accent-ink)}
+
+/* ---------- total ---------- */
+.lines{display:flex;flex-direction:column}
+.line{display:grid;grid-template-columns:11px 1fr auto;gap:11px;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line)}
+.line:last-child{border-bottom:0}
+.line i{width:11px;height:11px;border-radius:3px;align-self:center}
+.line .nm{font-size:13.5px;min-width:0}
+.line .nm em{display:block;font-style:normal;font-size:11.5px;color:var(--ink-3);margin-top:2px}
+.line .vl{font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.line.nula .nm,.line.nula .vl{color:var(--ink-3)}
+.line.tot{border-top:1.5px solid var(--line-strong);border-bottom:0;padding-top:13px}
+.line.tot .nm{font-weight:700}
+.line.tot .vl{font-size:18px;font-weight:700}
+
+/* ---------- calendario de jornada ---------- */
+.jornadas{display:flex;flex-wrap:wrap;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.jornadas div{flex:1 1 150px;min-width:0;background:var(--surface);padding:12px 14px}
+.jornadas div.hoy{background:var(--accent-soft)}
+.jornadas dt{margin:0;font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.jornadas div.hoy dt{color:var(--accent-ink)}
+.jornadas dd{margin:3px 0 0;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+.jornadas dd small{display:block;font-size:11px;font-weight:500;color:var(--ink-3);margin-top:2px;letter-spacing:0}
+
+.aviso{margin:14px 0 0;padding:11px 13px;border-radius:var(--r-sm);background:var(--surface-2);border:1px solid var(--line);font-size:12px;color:var(--ink-2);line-height:1.5}
+.seccion{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin:0 0 11px}
+.foot{margin-top:20px;font-size:11.5px;color:var(--ink-3);line-height:1.6}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+
+  <a class="volver" href="https://calculadorass.github.io/"><em>←</em> Calculadoras</a>
+
+  <div class="masthead">
+    <div class="brand">
+      <h1>Horas Extra</h1>
+      <p>Valor de la hora ordinaria, extraordinaria y de domingo, con la jornada vigente de la Ley 21.561.</p>
+    </div>
+    <div class="stamp"><span class="dot"></span><span id="periodo">Previred · Septiembre 2026</span></div>
+  </div>
+
+  <section class="card">
+    <div class="card-b">
+      <div class="rejilla">
+        <div class="campo ancho">
+          <label class="lab" for="f-sueldo">Sueldo base mensual</label>
+          <div class="money"><span class="peso">$</span>
+            <input class="input num" id="f-sueldo" type="text" inputmode="numeric" value="553.553" autocomplete="off">
+          </div>
+          <p class="hint" id="sueldo-hint">Viene cargado con el ingreso mínimo. Cámbialo por el sueldo que necesites.</p>
+        </div>
+
+        <div class="campo ancho">
+          <label class="lab" for="j-42">Jornada semanal</label>
+          <div class="seg" id="seg-jornada"></div>
+          <p class="hint" id="jornada-hint"></p>
+        </div>
+
+        <div class="campo">
+          <label class="lab" for="f-rec-extra">Recargo hora extra</label>
+          <div style="position:relative">
+            <input class="input num" id="f-rec-extra" type="text" inputmode="decimal" value="50" autocomplete="off" style="padding-right:28px">
+            <span style="position:absolute;right:11px;top:50%;transform:translateY(-50%);color:var(--ink-3)">%</span>
+          </div>
+          <p class="hint">Mínimo legal 50%. Puede pactarse mayor.</p>
+        </div>
+        <div class="campo">
+          <label class="lab" for="f-rec-dom">Recargo domingo</label>
+          <div style="position:relative">
+            <input class="input num" id="f-rec-dom" type="text" inputmode="decimal" value="30" autocomplete="off" style="padding-right:28px">
+            <span style="position:absolute;right:11px;top:50%;transform:translateY(-50%);color:var(--ink-3)">%</span>
+          </div>
+          <p class="hint">Art. 38: mínimo 30% para comercio y servicios.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="seccion">Valor de la hora</p>
+  <dl class="valores" id="valores"></dl>
+
+  <section class="card" style="margin-top:16px">
+    <div class="card-h"><h2>Cuánto se paga</h2></div>
+    <div class="card-b">
+      <div class="rejilla" style="margin-bottom:16px">
+        <div class="campo">
+          <label class="lab" for="f-h-extra">Horas extra normales</label>
+          <input class="input num" id="f-h-extra" type="text" inputmode="decimal" value="10" autocomplete="off">
+        </div>
+        <div class="campo">
+          <label class="lab" for="f-h-dom">Horas ordinarias en domingo</label>
+          <input class="input num" id="f-h-dom" type="text" inputmode="decimal" value="0" autocomplete="off">
+        </div>
+        <div class="campo ancho">
+          <label class="lab" for="f-h-extradom">Horas extra en domingo</label>
+          <input class="input num" id="f-h-extradom" type="text" inputmode="decimal" value="0" autocomplete="off">
+        </div>
+      </div>
+      <div class="lines" id="lines"></div>
+      <p class="aviso" id="aviso-tope" hidden></p>
+    </div>
+  </section>
+
+  <p class="seccion">La hora según la jornada</p>
+  <dl class="jornadas" id="jornadas"></dl>
+
+  <p class="foot" id="foot"></p>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var RESPALDO = {
+    periodo:"Septiembre 2026", fuente:"Previred",
+    imm:553553,
+    jornada:{
+      origen:"Ley 21.561",
+      semanalHoras:42,
+      recargoExtra:0.50,
+      recargoDomingo:0.30,
+      calendario:[
+        {desde:"2024-04-26", horas:44},
+        {desde:"2026-04-26", horas:42},
+        {desde:"2028-04-26", horas:40}
+      ]
+    }
+  };
+  var IND = RESPALDO;
+
+  var fCLP = new Intl.NumberFormat("es-CL",{style:"currency",currency:"CLP",maximumFractionDigits:0});
+  var fNum = new Intl.NumberFormat("es-CL",{maximumFractionDigits:0});
+  var f2   = new Intl.NumberFormat("es-CL",{maximumFractionDigits:2});
+  var f6   = new Intl.NumberFormat("es-CL",{minimumFractionDigits:7,maximumFractionDigits:7});
+  function clp(n){ return fCLP.format(Math.round(n||0)); }
+  var $ = function(id){ return document.getElementById(id); };
+
+  function leerMonto(el){ var v=String(el.value||"").replace(/[^\d]/g,""); return v?parseInt(v,10):0; }
+  /* Acepta "12,5" y "12.5". La coma siempre manda como separador decimal; sin
+     coma, un punto que agrupa de a tres dígitos se lee como separador de miles
+     y en cualquier otro caso como decimal, para que "7.5" no termine en 75. */
+  function leerDecimal(el){
+    var v = String(el.value||"").trim().replace(/[^\d.,]/g,"");
+    if(!v) return 0;
+    if(v.indexOf(",") >= 0){
+      v = v.replace(/\./g,"").replace(",",".");
+    } else {
+      var partes = v.split(".");
+      if(partes.length > 2 || (partes.length === 2 && partes[1].length === 3)) v = partes.join("");
+    }
+    var n = parseFloat(v);
+    return isFinite(n) && n > 0 ? n : 0;
+  }
+
+  /* Jornada vigente hoy según el calendario de la Ley 21.561. */
+  function jornadaVigente(){
+    var cal = (IND.jornada && IND.jornada.calendario) || RESPALDO.jornada.calendario;
+    var hoy = new Date().toISOString().slice(0,10), vig = null;
+    cal.forEach(function(t){ if(t.desde <= hoy) vig = t; });
+    return vig ? vig.horas : (IND.jornada.semanalHoras || 42);
+  }
+  function proximoTramo(){
+    var cal = (IND.jornada && IND.jornada.calendario) || RESPALDO.jornada.calendario;
+    var hoy = new Date().toISOString().slice(0,10), prox = null;
+    cal.forEach(function(t){ if(t.desde > hoy && !prox) prox = t; });
+    return prox;
+  }
+  function jornadaElegida(){
+    var sel = document.querySelector('input[name="jornada"]:checked');
+    return sel ? parseInt(sel.value,10) : jornadaVigente();
+  }
+
+  /* Valor de la hora ordinaria para sueldo mensual (criterio DT):
+     sueldo × 7 ÷ (30 × jornada semanal). Con 42 horas son 180 horas al mes. */
+  function calcular(){
+    var sueldo = leerMonto($("f-sueldo"));
+    var jornada = jornadaElegida();
+    var recExtra = leerDecimal($("f-rec-extra")) / 100;
+    var recDom   = leerDecimal($("f-rec-dom")) / 100;
+
+    var horasMes = 30 * jornada / 7;
+    var ordinaria = sueldo * 7 / (30 * jornada);
+    var extra     = ordinaria * (1 + recExtra);
+    var domingo   = ordinaria * (1 + recDom);
+    // El recargo dominical pasa a ser la base de la hora extraordinaria del
+    // domingo, así que los recargos se componen en vez de sumarse.
+    var extraDom  = ordinaria * (1 + recDom) * (1 + recExtra);
+
+    var nExtra    = leerDecimal($("f-h-extra"));
+    var nDom      = leerDecimal($("f-h-dom"));
+    var nExtraDom = leerDecimal($("f-h-extradom"));
+
+    var pagoExtra    = Math.round(extra * nExtra);
+    var pagoDom      = Math.round(domingo * nDom);
+    var pagoExtraDom = Math.round(extraDom * nExtraDom);
+
+    return {
+      sueldo:sueldo, jornada:jornada, horasMes:horasMes,
+      recExtra:recExtra, recDom:recDom,
+      ordinaria:ordinaria, extra:extra, domingo:domingo, extraDom:extraDom,
+      nExtra:nExtra, nDom:nDom, nExtraDom:nExtraDom,
+      pagoExtra:pagoExtra, pagoDom:pagoDom, pagoExtraDom:pagoExtraDom,
+      total: pagoExtra + pagoDom + pagoExtraDom,
+      factorExtra: sueldo > 0 ? extra / sueldo : 0,
+      factorExtraDom: sueldo > 0 ? extraDom / sueldo : 0
+    };
+  }
+
+  /* ---------- pintado ---------- */
+  function pintarJornadaSeg(){
+    var seg = $("seg-jornada");
+    if(seg.childNodes.length) return;            // se arma una sola vez
+    var vig = jornadaVigente();
+    [45,44,42,40].forEach(function(h){
+      var lab = document.createElement("label");
+      var inp = document.createElement("input");
+      inp.type = "radio"; inp.name = "jornada"; inp.value = String(h);
+      inp.id = "j-" + h;
+      if(h === vig) inp.checked = true;
+      var sp = document.createElement("span");
+      sp.appendChild(document.createTextNode(h + " h"));
+      if(h === vig){ var b = document.createElement("b"); b.textContent = "vigente"; sp.appendChild(b); }
+      lab.appendChild(inp); lab.appendChild(sp);
+      seg.appendChild(lab);
+      inp.addEventListener("change", render);
+    });
+  }
+
+  function pintarValores(r){
+    var c = $("valores");
+    c.textContent = "";
+    [
+      ["Hora ordinaria", r.ordinaria, "var(--c-ord)", "sueldo ÷ " + f2.format(r.horasMes) + " h", false],
+      ["Hora extra", r.extra, "var(--c-extra)", "+" + f2.format(r.recExtra*100) + "% · factor " + f6.format(r.factorExtra), true],
+      ["Hora domingo", r.domingo, "var(--c-dom)", "+" + f2.format(r.recDom*100) + "% sobre la ordinaria", false],
+      ["Extra en domingo", r.extraDom, "var(--c-extradom)",
+        "+" + f2.format(r.recDom*100) + "% y luego +" + f2.format(r.recExtra*100) + "%", true]
+    ].forEach(function(v){
+      var d = document.createElement("div");
+      d.className = "val" + (v[4] ? " destacado" : "");
+      d.style.setProperty("--c", v[2]);
+      var dt = document.createElement("dt"); dt.textContent = v[0];
+      var dd = document.createElement("dd"); dd.className = "num"; dd.textContent = clp(v[1]);
+      var fx = document.createElement("span"); fx.className = "fx"; fx.textContent = v[3];
+      dd.appendChild(fx);
+      d.appendChild(dt); d.appendChild(dd); c.appendChild(d);
+    });
+  }
+
+  function fila(cls, color, nombre, detalle, valor){
+    var d = document.createElement("div");
+    d.className = "line" + (cls ? " "+cls : "");
+    var i = document.createElement("i"); i.style.background = color || "transparent";
+    var nm = document.createElement("div"); nm.className = "nm";
+    nm.appendChild(document.createTextNode(nombre));
+    if(detalle){ var em = document.createElement("em"); em.textContent = detalle; nm.appendChild(em); }
+    var vl = document.createElement("div"); vl.className = "vl num"; vl.textContent = valor;
+    d.appendChild(i); d.appendChild(nm); d.appendChild(vl);
+    return d;
+  }
+
+  function pintarTotal(r){
+    var L = $("lines"); L.textContent = "";
+    L.appendChild(fila(r.nExtra ? "" : "nula", "var(--c-extra)", "Horas extra normales",
+      f2.format(r.nExtra) + " × " + clp(r.extra), clp(r.pagoExtra)));
+    L.appendChild(fila(r.nDom ? "" : "nula", "var(--c-dom)", "Horas ordinarias en domingo",
+      f2.format(r.nDom) + " × " + clp(r.domingo), clp(r.pagoDom)));
+    L.appendChild(fila(r.nExtraDom ? "" : "nula", "var(--c-extradom)", "Horas extra en domingo",
+      f2.format(r.nExtraDom) + " × " + clp(r.extraDom), clp(r.pagoExtraDom)));
+    L.appendChild(fila("tot", null, "Total a pagar", null, clp(r.total)));
+  }
+
+  function pintarJornadas(r){
+    var c = $("jornadas"); c.textContent = "";
+    var cal = (IND.jornada && IND.jornada.calendario) || RESPALDO.jornada.calendario;
+    var vig = jornadaVigente();
+    cal.forEach(function(t){
+      var ord = r.sueldo * 7 / (30 * t.horas);
+      var ext = ord * (1 + r.recExtra);
+      var d = document.createElement("div");
+      if(t.horas === vig) d.className = "hoy";
+      var dt = document.createElement("dt");
+      dt.textContent = t.horas + " horas" + (t.horas === vig ? " · hoy" : "");
+      var dd = document.createElement("dd"); dd.className = "num";
+      dd.textContent = clp(ext);
+      var sm = document.createElement("small");
+      var p = t.desde.split("-");
+      sm.textContent = "hora extra · desde " + p[2] + "-" + p[1] + "-" + p[0];
+      dd.appendChild(sm);
+      d.appendChild(dt); d.appendChild(dd); c.appendChild(d);
+    });
+  }
+
+  function render(){
+    pintarJornadaSeg();
+    var r = calcular();
+    pintarValores(r);
+    pintarTotal(r);
+    pintarJornadas(r);
+
+    var vig = jornadaVigente(), prox = proximoTramo();
+    var h = "La jornada ordinaria vigente es de " + vig + " horas semanales.";
+    if(prox){
+      var p = prox.desde.split("-");
+      h += " Desde el " + p[2] + "-" + p[1] + "-" + p[0] + " baja a " + prox.horas +
+           ", y la hora pasa a valer más porque el mismo sueldo se divide en menos horas.";
+    }
+    if(r.jornada !== vig) h += " Estás calculando con " + r.jornada + " horas.";
+    $("jornada-hint").textContent = h;
+
+    $("sueldo-hint").textContent = r.sueldo === IND.imm
+      ? "Viene cargado con el ingreso mínimo de " + clp(IND.imm) + ". Cámbialo por el sueldo que necesites."
+      : "Ingreso mínimo vigente: " + clp(IND.imm) + ".";
+
+    var tope = $("aviso-tope");
+    if(r.nExtra + r.nExtraDom > 60){
+      tope.hidden = false;
+      tope.textContent = "Son " + f2.format(r.nExtra + r.nExtraDom) + " horas extra en el período. " +
+        "El Art. 31 permite un máximo de 2 horas extraordinarias al día, así que conviene revisar " +
+        "que el total calce con los días efectivamente trabajados.";
+    } else { tope.hidden = true; tope.textContent = ""; }
+
+    $("foot").textContent = "La hora ordinaria se obtiene dividiendo el sueldo mensual por las horas " +
+      "del mes, que son 30 ÷ 7 × la jornada semanal. Las horas extraordinarias llevan un recargo " +
+      "mínimo de 50% (Art. 32) y solo proceden sobre la jornada ordinaria pactada. En el domingo, " +
+      "las horas ordinarias de trabajadores del comercio y servicios llevan un recargo mínimo de " +
+      "30% (Art. 38), y ese recargo pasa a ser la base de cálculo de la hora extraordinaria de ese " +
+      "día: por eso los recargos se componen y no se suman. No se consideran el descanso " +
+      "compensatorio ni los pactos que mejoren estos mínimos.";
+  }
+
+  /* ---------- eventos ---------- */
+  $("f-sueldo").addEventListener("input", function(){
+    var el = $("f-sueldo");
+    var pos = el.value.length - el.selectionStart;
+    var n = leerMonto(el);
+    el.value = n ? fNum.format(n) : "";
+    try{ var np = Math.max(0, el.value.length - pos); el.setSelectionRange(np,np); }catch(e){}
+    render();
+  });
+  $("f-sueldo").addEventListener("blur", function(){ if(!$("f-sueldo").value) $("f-sueldo").value = "0"; render(); });
+  ["f-rec-extra","f-rec-dom","f-h-extra","f-h-dom","f-h-extradom"].forEach(function(id){
+    $(id).addEventListener("input", render);
+    $(id).addEventListener("change", render);
+  });
+
+  render();
+
+  /* ---------- indicadores al día ---------- */
+  function normalizar(d){
+    if(!d || typeof d !== "object") return null;
+    var imm = +d.imm;
+    if(!(imm > 0)) return null;
+    var j = RESPALDO.jornada;
+    if(d.jornada && typeof d.jornada === "object"){
+      var cal = Array.isArray(d.jornada.calendario)
+        ? d.jornada.calendario.filter(function(t){
+            return t && /^\d{4}-\d{2}-\d{2}$/.test(t.desde) && +t.horas > 0;
+          }).map(function(t){ return {desde:t.desde, horas:+t.horas}; })
+        : [];
+      j = {
+        origen: d.jornada.origen || j.origen,
+        semanalHoras: +d.jornada.semanalHoras > 0 ? +d.jornada.semanalHoras : j.semanalHoras,
+        recargoExtra: +d.jornada.recargoExtra > 0 ? +d.jornada.recargoExtra : j.recargoExtra,
+        recargoDomingo: +d.jornada.recargoDomingo > 0 ? +d.jornada.recargoDomingo : j.recargoDomingo,
+        calendario: cal.length ? cal : j.calendario
+      };
+    }
+    return {
+      periodo: typeof d.periodo === "string" ? d.periodo : RESPALDO.periodo,
+      fuente:  typeof d.fuente  === "string" ? d.fuente  : RESPALDO.fuente,
+      imm: imm, jornada: j
+    };
+  }
+
+  (function(){
+    var rutas = ["../indicadores.json", "./indicadores.json"];
+    function intentar(i){
+      if(i >= rutas.length) return;   // se queda con los valores de respaldo
+      try{
+        fetch(rutas[i], {cache:"no-cache"})
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(function(d){
+            var limpio = normalizar(d);
+            if(!limpio) return intentar(i+1);
+            var eraMinimo = leerMonto($("f-sueldo")) === IND.imm;
+            IND = limpio;
+            $("periodo").textContent = IND.fuente + " · " + IND.periodo;
+            // El sueldo por defecto sigue al ingreso mínimo mientras no lo hayan tocado.
+            if(eraMinimo) $("f-sueldo").value = fNum.format(IND.imm);
+            $("f-rec-extra").value = f2.format(IND.jornada.recargoExtra * 100);
+            $("f-rec-dom").value   = f2.format(IND.jornada.recargoDomingo * 100);
+            var vig = jornadaVigente(), sel = $("j-" + vig);
+            if(sel) sel.checked = true;
+            render();
+          })
+          ["catch"](function(){ intentar(i+1); });
+      }catch(e){ intentar(i+1); }
+    }
+    intentar(0);
+  })();
+
+})();
+</script>
+
+</body>
+</html>
