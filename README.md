@@ -24,8 +24,13 @@ mínimo, topes imponibles, comisiones de cada AFP y tramos de asignación famili
 La fuente es el PDF mensual de *Indicadores Previsionales* de Previred, y el
 propio archivo guarda en `origen` la URL de la edición usada.
 
-Una tarea programada lo actualiza el día 2 de cada mes. Si no logra obtener los
-datos oficiales con certeza, no escribe nada y deja los del mes anterior.
+Una tarea programada lo actualiza el **día 14 de cada mes**. Se eligió esa fecha
+porque Previred no publica sus indicadores en los primeros días del mes, y la UF
+del último día —la que usan los topes imponibles— recién la publica el Banco
+Central alrededor del día 9.
+
+Si la tarea no logra obtener los datos oficiales con certeza, no escribe nada y
+deja los del mes anterior: un dato inventado es peor que uno desactualizado.
 
 Cada página trae además una copia de respaldo incrustada en su código, de modo
 que siempre muestra un resultado aunque el archivo no cargue.
