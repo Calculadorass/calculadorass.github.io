@@ -21,7 +21,7 @@ img{max-width:100%}
   --ink:#12201D; --ink-2:#4C5C58; --ink-3:#7C8C87;
   --line:#E1E8E5; --line-strong:#CBD6D2;
   --accent:#00897A; --accent-ink:#00655B; --accent-soft:#E4F2EF; --focus:#00897A;
-  --c-ord:#8F7500; --c-extra:#00897A; --c-dom:#2563C9; --c-extradom:#A82D86;
+  --c-ord:#8F7500; --c-extra:#00897A; --c-dom:#2563C9; --c-extradom:#A82D86; --c-dia:#C2610C;
   --shadow:0 1px 2px rgba(18,32,29,.05), 0 8px 24px -12px rgba(18,32,29,.18);
   --r:14px; --r-sm:9px;
 }
@@ -32,7 +32,7 @@ img{max-width:100%}
     --ink:#E7EFEC; --ink-2:#9FB0AB; --ink-3:#718380;
     --line:#23322E; --line-strong:#33453F;
     --accent:#2FB39B; --accent-ink:#57C9B3; --accent-soft:#12302A; --focus:#2FB39B;
-    --c-ord:#9A8226; --c-extra:#1E9B85; --c-dom:#4A80D6; --c-extradom:#C05CA0;
+    --c-ord:#9A8226; --c-extra:#1E9B85; --c-dom:#4A80D6; --c-extradom:#C05CA0; --c-dia:#C4762A;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
   }
 }
@@ -42,7 +42,7 @@ img{max-width:100%}
   --ink:#E7EFEC; --ink-2:#9FB0AB; --ink-3:#718380;
   --line:#23322E; --line-strong:#33453F;
   --accent:#2FB39B; --accent-ink:#57C9B3; --accent-soft:#12302A; --focus:#2FB39B;
-  --c-ord:#9A8226; --c-extra:#1E9B85; --c-dom:#4A80D6; --c-extradom:#C05CA0;
+  --c-ord:#9A8226; --c-extra:#1E9B85; --c-dom:#4A80D6; --c-extradom:#C05CA0; --c-dia:#C4762A;
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
 }
 
@@ -86,6 +86,16 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
 .seg span{display:block;text-align:center;padding:8px 6px;background:var(--surface);font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;transition:background .13s,color .13s;white-space:nowrap}
 .seg span b{display:block;font-size:10px;font-weight:500;opacity:.75;margin-top:1px}
 .seg input:checked+span{background:var(--accent);color:#fff}
+
+.chk{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.chk input{position:absolute;opacity:0;width:1px;height:1px}
+.chk .box{flex:none;width:19px;height:19px;margin-top:1px;border-radius:5px;border:1.5px solid var(--line-strong);background:var(--surface);display:grid;place-items:center;transition:background .13s,border-color .13s}
+.chk .box::after{content:"";width:9px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) scale(.5);opacity:0;transition:opacity .13s,transform .13s;margin-top:-2px}
+.chk input:checked+.box{background:var(--accent);border-color:var(--accent)}
+.chk input:checked+.box::after{opacity:1;transform:rotate(-45deg) scale(1)}
+.chk input:focus-visible+.box{outline:2px solid var(--focus);outline-offset:2px}
+.chk .txt{font-size:13px;font-weight:600;line-height:1.35}
+.chk .txt em{display:block;font-style:normal;font-weight:400;font-size:11.5px;color:var(--ink-3);margin-top:2px}
 
 /* ---------- valores de la hora ---------- */
 .valores{display:grid;grid-template-columns:repeat(auto-fit,minmax(152px,1fr));gap:12px}
@@ -157,6 +167,16 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
         </div>
 
         <div class="campo ancho">
+          <label class="chk" for="f-grat">
+            <input type="checkbox" id="f-grat" checked>
+            <span class="box"></span>
+            <span class="txt">Recibe gratificación legal
+              <em>Art. 50: 25% del sueldo, con tope mensual. Suma al valor del día, no a la hora extra.</em>
+            </span>
+          </label>
+        </div>
+
+        <div class="campo ancho">
           <label class="lab" for="j-42">Jornada semanal</label>
           <div class="seg" id="seg-jornada"></div>
           <p class="hint" id="jornada-hint"></p>
@@ -184,6 +204,10 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
 
   <p class="seccion">Valor de la hora</p>
   <dl class="valores" id="valores"></dl>
+
+  <p class="seccion" style="margin-top:22px">Valor del día</p>
+  <dl class="valores" id="valores-dia"></dl>
+  <p class="aviso" id="aviso-dia"></p>
 
   <section class="card" style="margin-top:16px">
     <div class="card-h"><h2>Cuánto se paga</h2></div>
@@ -285,8 +309,23 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     var recExtra = leerDecimal($("f-rec-extra")) / 100;
     var recDom   = leerDecimal($("f-rec-dom")) / 100;
 
+    // Art. 32: si el sueldo convenido es inferior al ingreso mínimo, la base del
+    // recargo es el ingreso mínimo.
+    var baseHora = Math.max(sueldo, IND.imm);
+    var pisoAplicado = sueldo > 0 && sueldo < IND.imm;
+
+    // Valor del día: aquí sí entra la gratificación, porque se prorratea toda la
+    // remuneración del mes. En la hora extraordinaria no entra (dictámenes DT
+    // 6.757-311 de 1994 y 3.597-104 de 1991): esa va sobre el sueldo convenido.
+    var topeGrat = 4.75 * IND.imm / 12;
+    var conGrat = $("f-grat").checked;
+    var gratificacion = conGrat ? Math.min(0.25 * sueldo, topeGrat) : 0;
+    var gratTopada = conGrat && 0.25 * sueldo > topeGrat;
+    var remuneracionMes = sueldo + gratificacion;
+    var valorDia = remuneracionMes / 30;
+
     var horasMes = 30 * jornada / 7;
-    var ordinaria = sueldo * 7 / (30 * jornada);
+    var ordinaria = baseHora * 7 / (30 * jornada);
     var extra     = ordinaria * (1 + recExtra);
     var domingo   = ordinaria * (1 + recDom);
     // El recargo dominical pasa a ser la base de la hora extraordinaria del
@@ -303,13 +342,16 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
 
     return {
       sueldo:sueldo, jornada:jornada, horasMes:horasMes,
+      baseHora:baseHora, pisoAplicado:pisoAplicado,
+      conGrat:conGrat, gratificacion:gratificacion, gratTopada:gratTopada,
+      topeGrat:topeGrat, remuneracionMes:remuneracionMes, valorDia:valorDia,
       recExtra:recExtra, recDom:recDom,
       ordinaria:ordinaria, extra:extra, domingo:domingo, extraDom:extraDom,
       nExtra:nExtra, nDom:nDom, nExtraDom:nExtraDom,
       pagoExtra:pagoExtra, pagoDom:pagoDom, pagoExtraDom:pagoExtraDom,
       total: pagoExtra + pagoDom + pagoExtraDom,
-      factorExtra: sueldo > 0 ? extra / sueldo : 0,
-      factorExtraDom: sueldo > 0 ? extraDom / sueldo : 0
+      factorExtra: baseHora > 0 ? extra / baseHora : 0,
+      factorExtraDom: baseHora > 0 ? extraDom / baseHora : 0
     };
   }
 
@@ -337,7 +379,8 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     var c = $("valores");
     c.textContent = "";
     [
-      ["Hora ordinaria", r.ordinaria, "var(--c-ord)", "sueldo ÷ " + f2.format(r.horasMes) + " h", false],
+      ["Hora ordinaria", r.ordinaria, "var(--c-ord)",
+        (r.pisoAplicado ? "ingreso mínimo" : "sueldo") + " ÷ " + f2.format(r.horasMes) + " h", false],
       ["Hora extra", r.extra, "var(--c-extra)", "+" + f2.format(r.recExtra*100) + "% · factor " + f6.format(r.factorExtra), true],
       ["Hora domingo", r.domingo, "var(--c-dom)", "+" + f2.format(r.recDom*100) + "% sobre la ordinaria", false],
       ["Extra en domingo", r.extraDom, "var(--c-extradom)",
@@ -352,6 +395,36 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
       dd.appendChild(fx);
       d.appendChild(dt); d.appendChild(dd); c.appendChild(d);
     });
+  }
+
+  function pintarDia(r){
+    var c = $("valores-dia");
+    c.textContent = "";
+    var items = [
+      ["Sueldo base", r.sueldo, "var(--c-ord)", "lo convenido al mes", false]
+    ];
+    if(r.conGrat){
+      items.push(["Gratificación legal", r.gratificacion, "var(--c-dom)",
+        r.gratTopada ? "topada en " + clp(r.topeGrat) : "25% del sueldo base", false]);
+    }
+    items.push(["Valor del día", r.valorDia, "var(--c-dia)",
+      clp(r.remuneracionMes) + " ÷ 30 días", true]);
+
+    items.forEach(function(v){
+      var d = document.createElement("div");
+      d.className = "val" + (v[4] ? " destacado" : "");
+      d.style.setProperty("--c", v[2]);
+      var dt = document.createElement("dt"); dt.textContent = v[0];
+      var dd = document.createElement("dd"); dd.className = "num"; dd.textContent = clp(v[1]);
+      var fx = document.createElement("span"); fx.className = "fx"; fx.textContent = v[3];
+      dd.appendChild(fx);
+      d.appendChild(dt); d.appendChild(dd); c.appendChild(d);
+    });
+
+    $("aviso-dia").textContent = r.conGrat
+      ? "El valor del día prorratea toda la remuneración del mes, así que la gratificación sí entra. En la hora extraordinaria no: esa va sobre el sueldo convenido."
+      : "Sin gratificación el día vale " + clp(r.valorDia) + ". Con ella subiría a " +
+        clp((r.sueldo + Math.min(0.25*r.sueldo, r.topeGrat)) / 30) + ".";
   }
 
   function fila(cls, color, nombre, detalle, valor){
@@ -402,6 +475,7 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     pintarJornadaSeg();
     var r = calcular();
     pintarValores(r);
+    pintarDia(r);
     pintarTotal(r);
     pintarJornadas(r);
 
@@ -420,7 +494,13 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
       : "Ingreso mínimo vigente: " + clp(IND.imm) + ".";
 
     var tope = $("aviso-tope");
-    if(r.nExtra + r.nExtraDom > 60){
+    if(r.pisoAplicado){
+      tope.hidden = false;
+      tope.textContent = "El sueldo base de " + clp(r.sueldo) + " es inferior al ingreso mínimo de " +
+        clp(IND.imm) + ". Según el Art. 32, la hora extraordinaria se calcula sobre el ingreso " +
+        "mínimo, así que los valores de arriba usan esa base. El valor del día, en cambio, sigue " +
+        "el sueldo realmente convenido.";
+    } else if(r.nExtra + r.nExtraDom > 60){
       tope.hidden = false;
       tope.textContent = "Son " + f2.format(r.nExtra + r.nExtraDom) + " horas extra en el período. " +
         "El Art. 31 permite un máximo de 2 horas extraordinarias al día, así que conviene revisar " +
@@ -432,7 +512,10 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
       "mínimo de 50% (Art. 32) y solo proceden sobre la jornada ordinaria pactada. En el domingo, " +
       "las horas ordinarias de trabajadores del comercio y servicios llevan un recargo mínimo de " +
       "30% (Art. 38), y ese recargo pasa a ser la base de cálculo de la hora extraordinaria de ese " +
-      "día: por eso los recargos se componen y no se suman. No se consideran el descanso " +
+      "día: por eso los recargos se componen y no se suman. Si el sueldo convenido es inferior " +
+      "al ingreso mínimo, ese mínimo es la base del recargo. La gratificación no entra en la hora " +
+      "extraordinaria (dictámenes 6.757-311 de 1994 y 3.597-104 de 1991), pero sí en el valor del " +
+      "día, que prorratea la remuneración del mes en 30. No se consideran el descanso " +
       "compensatorio ni los pactos que mejoren estos mínimos.";
   }
 
@@ -446,7 +529,7 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
     render();
   });
   $("f-sueldo").addEventListener("blur", function(){ if(!$("f-sueldo").value) $("f-sueldo").value = "0"; render(); });
-  ["f-rec-extra","f-rec-dom","f-h-extra","f-h-dom","f-h-extradom"].forEach(function(id){
+  ["f-rec-extra","f-rec-dom","f-h-extra","f-h-dom","f-h-extradom","f-grat"].forEach(function(id){
     $(id).addEventListener("input", render);
     $(id).addEventListener("change", render);
   });

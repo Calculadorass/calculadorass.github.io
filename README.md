@@ -126,6 +126,14 @@ corresponde a la fecha de hoy y muestra lo que valdrá la hora en los demás.
 El valor de la hora ordinaria sigue el criterio de la Dirección del Trabajo:
 sueldo mensual × 7 ÷ (30 × jornada semanal). Con 42 horas son 180 horas al mes.
 
+Dos reglas que cambian la base y conviene no confundir:
+
+- Si el **sueldo convenido es inferior al ingreso mínimo**, el Art. 32 manda
+  calcular el recargo sobre el ingreso mínimo, no sobre el sueldo menor.
+- La **gratificación no entra** en la base de la hora extraordinaria (dictámenes
+  DT 6.757-311 de 1994 y 3.597-104 de 1991), pero **sí entra en el valor del
+  día**, que prorratea toda la remuneración del mes en 30.
+
 Los recargos no se suman: el 30% del domingo (Art. 38, comercio y servicios)
 pasa a ser la base de cálculo de la hora extraordinaria de ese día, así que la
 hora extra en domingo es hora × 1,30 × 1,50 y no × 1,80.
