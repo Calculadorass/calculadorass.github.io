@@ -124,7 +124,7 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
 .modo{display:flex;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;margin-bottom:16px}
 .modo label{flex:1;display:block;position:relative;min-width:0}
 .modo input{position:absolute;opacity:0;width:1px;height:1px}
-.modo span{display:block;text-align:center;padding:10px 8px;background:var(--surface);font-size:13.5px;font-weight:600;color:var(--ink-2);cursor:pointer;transition:background .13s,color .13s}
+.modo span{display:block;text-align:center;padding:10px 7px;background:var(--surface);font-size:13px;line-height:1.25;font-weight:600;color:var(--ink-2);cursor:pointer;transition:background .13s,color .13s}
 .modo span b{display:block;font-size:11px;font-weight:500;opacity:.78;margin-top:2px}
 .modo input:checked+span{background:var(--accent);color:#fff}
 .modo input:focus-visible+span{outline:2px solid var(--focus);outline-offset:-2px}
@@ -244,11 +244,11 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
       <div class="modo">
         <label>
           <input type="radio" name="modo" id="m-liquido" value="liquido" checked>
-          <span>Quiero que reciba<b>bono líquido</b></span>
+          <span>Calculo bono bruto<b>ingresas el líquido</b></span>
         </label>
         <label>
           <input type="radio" name="modo" id="m-bruto" value="bruto">
-          <span>Voy a pagar<b>bono bruto</b></span>
+          <span>Calculo bono líquido<b>ingresas el bruto</b></span>
         </label>
       </div>
 
@@ -640,9 +640,12 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
   });
   Array.prototype.forEach.call(document.querySelectorAll('input[name="modo"]'), function(el){
     el.addEventListener("change", function(){
-      // Al cambiar de modo se conserva el resultado: lo calculado pasa a ser la entrada.
-      var previo = calcular();
-      elBono.value = fNum.format(esModoLiquido() ? previo.neto : previo.bruto);
+      // El evento llega con el modo YA cambiado, así que el valor del campo hay
+      // que interpretarlo con el modo anterior. Así el resultado se conserva.
+      var c = contexto(), valor = leerMonto(elBono);
+      elBono.value = fNum.format(esModoLiquido()
+        ? Math.max(0, liquidoCon(valor, c) - liquidoCon(0, c))   // venía de modo bruto
+        : brutoParaLiquido(valor, c));                            // venía de modo líquido
       render();
     });
   });

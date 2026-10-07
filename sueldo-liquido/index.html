@@ -211,6 +211,9 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
   transition:background .13s,color .13s;white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis;
 }
+/* El selector de modo lleva subtítulo, así que necesita dos líneas. */
+.seg.modo span{white-space:normal;line-height:1.25;padding:9px 7px}
+.seg.modo span b{display:block;font-size:10.5px;font-weight:500;opacity:.78;margin-top:2px}
 .seg input:checked+span{background:var(--accent);color:#fff}
 
 .chk{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
@@ -303,9 +306,9 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:v
       <div class="card-b">
 
         <div class="field">
-          <div class="seg" style="margin-bottom:13px">
-            <label><input type="radio" name="modo" id="m-directo" value="directo" checked><span>Sé el bruto</span></label>
-            <label><input type="radio" name="modo" id="m-inverso" value="inverso"><span>Quiero este líquido</span></label>
+          <div class="seg modo" style="margin-bottom:13px">
+            <label><input type="radio" name="modo" id="m-directo" value="directo" checked><span>Calculo sueldo líquido<b>ingresas el bruto</b></span></label>
+            <label><input type="radio" name="modo" id="m-inverso" value="inverso"><span>Calculo sueldo base<b>ingresas el líquido</b></span></label>
           </div>
           <label class="lab" for="f-base" id="base-lab">Sueldo base mensual</label>
           <div class="money"><span class="peso">$</span>

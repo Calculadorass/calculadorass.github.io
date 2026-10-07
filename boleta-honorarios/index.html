@@ -448,9 +448,12 @@ label.lab{display:block;font-size:13px;font-weight:600;margin-bottom:7px;color:v
 
   Array.prototype.forEach.call(document.querySelectorAll('input[name="modo"]'), function(el){
     el.addEventListener("change", function(){
-      // Al cambiar de modo se conserva el resultado: el valor calculado pasa a ser la entrada.
-      var previo = calcular();
-      elMonto.value = fNum.format(esModoLiquido() ? previo.liquido : previo.bruto);
+      // El evento llega con el modo YA cambiado, así que el valor del campo hay
+      // que interpretarlo con el modo anterior. Así el resultado se conserva.
+      var valor = leerMonto();
+      elMonto.value = fNum.format(esModoLiquido()
+        ? desdeBruto(valor).liquido      // venía de modo bruto
+        : desdeLiquido(valor).bruto);    // venía de modo líquido
       render();
     });
   });
